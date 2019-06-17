@@ -1596,8 +1596,7 @@ if (window['HTMLVideoElement'] == undefined) {
                     var message = egret.sys.tr(1052, this._url);
                     egret.warn(message);
                 }
-                //小米平台会自动抛出 error 事件，不用再发送一次
-                // this.dispatchEventWith(IOErrorEvent.IO_ERROR);
+                this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
             };
             /**
              * @private
