@@ -81,5 +81,4 @@ namespace egret.oppogame {
             this.dispatchEvent(event);
         };
     }
-    egret.Geolocation = egret.oppogame.WebGeolocation;
 }

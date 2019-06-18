@@ -138,6 +138,8 @@ namespace egret.oppogame {
         return size;
     }
     egret.sys.drawTextureElements = drawTextureElements;
+    
+    egret.Geolocation = egret.oppogame.WebGeolocation;
 }
 
 // window["sharedCanvas"].isCanvas = true;
