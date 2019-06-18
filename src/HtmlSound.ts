@@ -114,10 +114,6 @@ namespace egret.oppogame {
             audio.onError(onAudioError);
 
             this.originAudio = audio;
-            if(HtmlSound.clearAudios[this.url]) {
-                delete HtmlSound.clearAudios[this.url];
-            }
-            HtmlSound.$recycle(this.url, audio);
             audio.src = url
 
             function onAudioLoaded():void {
@@ -150,7 +146,7 @@ namespace egret.oppogame {
                 egret.$error(1049);
             }
 
-            let audio = HtmlSound.$pop(this.url);
+            let audio = this.originAudio
 
             audio.autoplay = true;
 
@@ -169,44 +165,8 @@ namespace egret.oppogame {
          * @inheritDoc
          */
         public close() {
-            if (this.loaded == false && this.originAudio)
-                this.originAudio.src = "";
             if (this.originAudio)
                 this.originAudio = null;
-            HtmlSound.$clear(this.url);
-        }
-
-        /**
-         * @private
-         */
-        private static audios:Object = {};
-        private static clearAudios:Object = {};
-
-        static $clear(url:string):void {
-            HtmlSound.clearAudios[url] = true;
-            let array:any[] = HtmlSound.audios[url];
-            if (array) {
-                array.length = 0;
-            }
-        }
-
-        static $pop(url:string):qg.InnerAudioContext {
-            let array:any[] = HtmlSound.audios[url];
-            if (array && array.length > 0) {
-                return array.pop();
-            }
-            return null;
-        }
-
-        static $recycle(url:string, audio:any):void {
-            if(HtmlSound.clearAudios[url]) {
-                return;
-            }
-            let array:any[] = HtmlSound.audios[url];
-            if (HtmlSound.audios[url] == null) {
-                array = HtmlSound.audios[url] = [];
-            }
-            array.push(audio);
         }
     }
 }
