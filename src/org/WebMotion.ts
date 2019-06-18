@@ -49,5 +49,4 @@ namespace egret.oppogame {
             this.dispatchEvent(event);
         }
     }
-    egret.Motion = egret.oppogame.WebMotion;
 }

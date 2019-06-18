@@ -140,6 +140,7 @@ namespace egret.oppogame {
     egret.sys.drawTextureElements = drawTextureElements;
     
     egret.Geolocation = egret.oppogame.WebGeolocation;
+    egret.Motion = egret.oppogame.WebMotion;
 }
 
 // window["sharedCanvas"].isCanvas = true;
