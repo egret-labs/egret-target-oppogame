@@ -43,11 +43,163 @@ r.prototype = e.prototype, t.prototype = new r();
         /**
          * @private
          */
-        function getOption(key) {
-            return "";
-        }
-        oppogame.getOption = getOption;
-        egret.getOption = getOption;
+        var WebPlayer = (function (_super) {
+            __extends(WebPlayer, _super);
+            function WebPlayer(container, options) {
+                var _this = _super.call(this) || this;
+                _this.init(container, options);
+                _this.initOrientation();
+                return _this;
+            }
+            WebPlayer.prototype.init = function (container, options) {
+                var option = this.readOption(container, options);
+                var stage = new egret.Stage();
+                stage.$screen = this;
+                stage.$scaleMode = option.scaleMode;
+                stage.$orientation = option.orientation;
+                stage.$maxTouches = option.maxTouches;
+                stage.frameRate = option.frameRate;
+                qg.setPreferredFramesPerSecond(stage.frameRate);
+                stage.textureScaleFactor = option.textureScaleFactor;
+                var buffer = new egret.sys.RenderBuffer(undefined, undefined, true);
+                var canvas = buffer.surface;
+                this.attachCanvas(container, canvas);
+                var webTouch = new oppogame.WebTouchHandler(stage, canvas);
+                var player = new egret.sys.Player(buffer, stage, option.entryClassName);
+                egret.lifecycle.stage = stage;
+                egret.lifecycle.addLifecycleListener(oppogame.WebLifeCycleHandler);
+                if (option.showFPS || option.showLog) {
+                    player.displayFPS(option.showFPS, option.showLog, option.logFilter, option.fpsStyles);
+                }
+                this.playerOption = option;
+                this.container = container;
+                this.canvas = canvas;
+                this.stage = stage;
+                this.player = player;
+                this.webTouchHandler = webTouch;
+                this.updateScreenSize();
+                this.updateMaxTouches();
+                player.start();
+            };
+            WebPlayer.prototype.initOrientation = function () {
+                var self = this;
+                window.addEventListener("orientationchange", function () {
+                    window.setTimeout(function () {
+                        egret.StageOrientationEvent.dispatchStageOrientationEvent(self.stage, egret.StageOrientationEvent.ORIENTATION_CHANGE);
+                    }, 350);
+                });
+            };
+            /**
+             * 读取初始化参数
+             */
+            WebPlayer.prototype.readOption = function (container, options) {
+                var option = {};
+                option.entryClassName = options.entryClassName || "Main";
+                option.scaleMode = options.scaleMode || egret.StageScaleMode.FIXED_WIDTH;
+                if (option.scaleMode == egret.StageScaleMode.SHOW_ALL) {
+                    option.scaleMode = egret.StageScaleMode.FIXED_WIDE;
+                    var message = egret.sys.tr(4500, "showAll", "fixedWidth");
+                    console.warn(message);
+                }
+                option.frameRate = options.frameRate || 30;
+                option.contentWidth = options.contentWidth || 640;
+                option.contentHeight = options.contentHeight || 1136;
+                option.orientation = options.orientation || egret.OrientationMode.AUTO;
+                option.maxTouches = options.maxTouches;
+                option.textureScaleFactor = 1;
+                option.showFPS = options.showFPS;
+                var styleStr = options.fpsStyles || "x:0,y:0,size:12,textColor:0xffffff,bgAlpha:0.9";
+                var stylesArr = styleStr.split(",");
+                var styles = {};
+                for (var i = 0; i < stylesArr.length; i++) {
+                    var tempStyleArr = stylesArr[i].split(":");
+                    styles[tempStyleArr[0]] = tempStyleArr[1];
+                }
+                option.fpsStyles = styles;
+                option.showLog = false;
+                option.logFilter = "";
+                return option;
+            };
+            /**
+             * @private
+             * 添加canvas到container。
+             */
+            WebPlayer.prototype.attachCanvas = function (container, canvas) {
+                // let style = canvas.style;
+                // style.cursor = "inherit";
+                // style.position = "absolute";
+                // style.top = "0";
+                // style.bottom = "0";
+                // style.left = "0";
+                // style.right = "0";
+                // container.appendChild(canvas);
+                // style = container.style;
+                // style.overflow = "hidden";
+                // style.position = "absolute";
+            };
+            /**
+             * @private
+             * 更新播放器视口尺寸
+             */
+            WebPlayer.prototype.updateScreenSize = function () {
+                var canvas = this.canvas;
+                if (canvas['userTyping'])
+                    return;
+                var option = this.playerOption;
+                var boundingClientWidth = window.innerWidth;
+                var boundingClientHeight = window.innerHeight;
+                var shouldRotate = false;
+                var orientation = this.stage.$orientation;
+                if (orientation != egret.OrientationMode.AUTO) {
+                    shouldRotate = orientation != egret.OrientationMode.PORTRAIT && boundingClientHeight > boundingClientWidth
+                        || orientation == egret.OrientationMode.PORTRAIT && boundingClientWidth > boundingClientHeight;
+                }
+                var screenWidth = shouldRotate ? boundingClientHeight : boundingClientWidth;
+                var screenHeight = shouldRotate ? boundingClientWidth : boundingClientHeight;
+                egret.Capabilities["boundingClientWidth" + ""] = screenWidth;
+                egret.Capabilities["boundingClientHeight" + ""] = screenHeight;
+                var stageSize = egret.sys.screenAdapter.calculateStageSize(this.stage.$scaleMode, screenWidth, screenHeight, option.contentWidth, option.contentHeight);
+                var stageWidth = stageSize.stageWidth;
+                var stageHeight = stageSize.stageHeight;
+                var displayWidth = stageSize.displayWidth;
+                var displayHeight = stageSize.displayHeight;
+                // canvas.style[getPrefixStyleName("transformOrigin")] = "0% 0% 0px";
+                if (canvas.width != stageWidth) {
+                    canvas.width = stageWidth;
+                }
+                if (canvas.height != stageHeight) {
+                    canvas.height = stageHeight;
+                }
+                var rotation = 0;
+                var scalex = displayWidth / stageWidth, scaley = displayHeight / stageHeight;
+                var canvasScaleX = scalex * egret.sys.DisplayList.$canvasScaleFactor;
+                var canvasScaleY = scaley * egret.sys.DisplayList.$canvasScaleFactor;
+                var m = new egret.Matrix();
+                m.scale(scalex / canvasScaleX, scaley / canvasScaleY);
+                m.rotate(rotation * Math.PI / 180);
+                var transform = "matrix(" + m.a + "," + m.b + "," + m.c + "," + m.d + "," + m.tx + "," + m.ty + ")";
+                // canvas.style[getPrefixStyleName("transform")] = transform;
+                egret.sys.DisplayList.$setCanvasScale(canvasScaleX, canvasScaleY);
+                this.webTouchHandler.updateScaleMode(scalex, scaley, rotation);
+                this.player.updateStageSize(stageWidth, stageHeight); //不要在这个方法后面修改属性
+            };
+            WebPlayer.prototype.setContentSize = function (width, height) {
+                var option = this.playerOption;
+                option.contentWidth = width;
+                option.contentHeight = height;
+                this.updateScreenSize();
+            };
+            /**
+             * @private
+             * 更新触摸数量
+             */
+            WebPlayer.prototype.updateMaxTouches = function () {
+                this.webTouchHandler.$updateMaxTouches();
+            };
+            return WebPlayer;
+        }(egret.HashObject));
+        oppogame.WebPlayer = WebPlayer;
+        __reflect(WebPlayer.prototype, "egret.oppogame.WebPlayer", ["egret.sys.Screen"]);
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -263,10 +415,6 @@ if (window['HTMLVideoElement'] == undefined) {
                 audio.onCanplay(onAudioLoaded);
                 audio.onError(onAudioError);
                 this.originAudio = audio;
-                if (HtmlSound.clearAudios[this.url]) {
-                    delete HtmlSound.clearAudios[this.url];
-                }
-                HtmlSound.$recycle(this.url, audio);
                 audio.src = url;
                 function onAudioLoaded() {
                     removeListeners();
@@ -291,7 +439,7 @@ if (window['HTMLVideoElement'] == undefined) {
                 if (true && this.loaded == false) {
                     egret.$error(1049);
                 }
-                var audio = HtmlSound.$pop(this.url);
+                var audio = this.originAudio;
                 audio.autoplay = true;
                 var channel = new oppogame.HtmlSoundChannel(audio);
                 channel.$url = this.url;
@@ -305,35 +453,8 @@ if (window['HTMLVideoElement'] == undefined) {
              * @inheritDoc
              */
             HtmlSound.prototype.close = function () {
-                if (this.loaded == false && this.originAudio)
-                    this.originAudio.src = "";
                 if (this.originAudio)
                     this.originAudio = null;
-                HtmlSound.$clear(this.url);
-            };
-            HtmlSound.$clear = function (url) {
-                HtmlSound.clearAudios[url] = true;
-                var array = HtmlSound.audios[url];
-                if (array) {
-                    array.length = 0;
-                }
-            };
-            HtmlSound.$pop = function (url) {
-                var array = HtmlSound.audios[url];
-                if (array && array.length > 0) {
-                    return array.pop();
-                }
-                return null;
-            };
-            HtmlSound.$recycle = function (url, audio) {
-                if (HtmlSound.clearAudios[url]) {
-                    return;
-                }
-                var array = HtmlSound.audios[url];
-                if (HtmlSound.audios[url] == null) {
-                    array = HtmlSound.audios[url] = [];
-                }
-                array.push(audio);
             };
             /**
              * Background music
@@ -361,11 +482,6 @@ if (window['HTMLVideoElement'] == undefined) {
              * @language zh_CN
              */
             HtmlSound.EFFECT = "effect";
-            /**
-             * @private
-             */
-            HtmlSound.audios = {};
-            HtmlSound.clearAudios = {};
             return HtmlSound;
         }(egret.EventDispatcher));
         oppogame.HtmlSound = HtmlSound;
@@ -478,7 +594,6 @@ if (window['HTMLVideoElement'] == undefined) {
                 //延迟一定时间再停止，规避chrome报错
                 window.setTimeout(function () {
                     audio.pause();
-                    oppogame.HtmlSound.$recycle(url, audio);
                 }, 200);
             };
             Object.defineProperty(HtmlSoundChannel.prototype, "volume", {
@@ -522,383 +637,6 @@ if (window['HTMLVideoElement'] == undefined) {
         }(egret.EventDispatcher));
         oppogame.HtmlSoundChannel = HtmlSoundChannel;
         __reflect(HtmlSoundChannel.prototype, "egret.oppogame.HtmlSoundChannel", ["egret.SoundChannel", "egret.IEventDispatcher"]);
-    })(oppogame = egret.oppogame || (egret.oppogame = {}));
-})(egret || (egret = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-
-(function (egret) {
-    var oppogame;
-    (function (oppogame) {
-        /**
-         * @private
-         */
-        var WebAudioDecode = (function () {
-            function WebAudioDecode() {
-            }
-            /**
-             * @private
-             *
-             */
-            WebAudioDecode.decodeAudios = function () {
-                if (WebAudioDecode.decodeArr.length <= 0) {
-                    return;
-                }
-                if (WebAudioDecode.isDecoding) {
-                    return;
-                }
-                WebAudioDecode.isDecoding = true;
-                var decodeInfo = WebAudioDecode.decodeArr.shift();
-                WebAudioDecode.ctx.decodeAudioData(decodeInfo["buffer"], function (audioBuffer) {
-                    decodeInfo["self"].audioBuffer = audioBuffer;
-                    if (decodeInfo["success"]) {
-                        decodeInfo["success"]();
-                    }
-                    WebAudioDecode.isDecoding = false;
-                    WebAudioDecode.decodeAudios();
-                }, function () {
-                    alert("sound decode error: " + decodeInfo["url"] + "！\nsee http://edn.egret.com/cn/docs/page/156");
-                    if (decodeInfo["fail"]) {
-                        decodeInfo["fail"]();
-                    }
-                    WebAudioDecode.isDecoding = false;
-                    WebAudioDecode.decodeAudios();
-                });
-            };
-            /**
-             * @private
-             */
-            WebAudioDecode.decodeArr = [];
-            /**
-             * @private
-             */
-            WebAudioDecode.isDecoding = false;
-            return WebAudioDecode;
-        }());
-        oppogame.WebAudioDecode = WebAudioDecode;
-        __reflect(WebAudioDecode.prototype, "egret.oppogame.WebAudioDecode");
-        /**
-         * @private
-         * @inheritDoc
-         */
-        var WebAudioSound = (function (_super) {
-            __extends(WebAudioSound, _super);
-            /**
-             * @private
-             * @inheritDoc
-             */
-            function WebAudioSound() {
-                var _this = _super.call(this) || this;
-                /**
-                 * @private
-                 */
-                _this.loaded = false;
-                return _this;
-            }
-            Object.defineProperty(WebAudioSound.prototype, "length", {
-                get: function () {
-                    if (this.audioBuffer) {
-                        return this.audioBuffer.duration;
-                    }
-                    throw new Error("sound not loaded!");
-                    //return 0;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            /**
-             * @inheritDoc
-             */
-            WebAudioSound.prototype.load = function (url) {
-                var self = this;
-                this.url = url;
-                if (true && !url) {
-                    egret.$error(3002);
-                }
-                var request = new XMLHttpRequest();
-                request.open("GET", url, true);
-                request.responseType = "arraybuffer";
-                request.onreadystatechange = function () {
-                    if (request.readyState == 4) {
-                        var ioError = (request.status >= 400 || request.status == 0);
-                        if (ioError) {
-                            self.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
-                        }
-                        else {
-                            WebAudioDecode.decodeArr.push({
-                                "buffer": request.response,
-                                "success": onAudioLoaded,
-                                "fail": onAudioError,
-                                "self": self,
-                                "url": self.url
-                            });
-                            WebAudioDecode.decodeAudios();
-                        }
-                    }
-                };
-                request.send();
-                function onAudioLoaded() {
-                    self.loaded = true;
-                    self.dispatchEventWith(egret.Event.COMPLETE);
-                }
-                function onAudioError() {
-                    self.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
-                }
-            };
-            /**
-             * @inheritDoc
-             */
-            WebAudioSound.prototype.play = function (startTime, loops) {
-                startTime = +startTime || 0;
-                loops = +loops || 0;
-                if (true && this.loaded == false) {
-                    egret.$error(1049);
-                }
-                var channel = new oppogame.WebAudioSoundChannel();
-                channel.$url = this.url;
-                channel.$loops = loops;
-                channel.$audioBuffer = this.audioBuffer;
-                channel.$startTime = startTime;
-                channel.$play();
-                egret.sys.$pushSoundChannel(channel);
-                return channel;
-            };
-            /**
-             * @inheritDoc
-             */
-            WebAudioSound.prototype.close = function () {
-            };
-            /**
-             * Background music
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 背景音乐
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            WebAudioSound.MUSIC = "music";
-            /**
-             * EFFECT
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 音效
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            WebAudioSound.EFFECT = "effect";
-            return WebAudioSound;
-        }(egret.EventDispatcher));
-        oppogame.WebAudioSound = WebAudioSound;
-        __reflect(WebAudioSound.prototype, "egret.oppogame.WebAudioSound", ["egret.Sound"]);
-    })(oppogame = egret.oppogame || (egret.oppogame = {}));
-})(egret || (egret = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-
-(function (egret) {
-    var oppogame;
-    (function (oppogame) {
-        /**
-         * @private
-         * @inheritDoc
-         */
-        var WebAudioSoundChannel = (function (_super) {
-            __extends(WebAudioSoundChannel, _super);
-            /**
-             * @private
-             */
-            function WebAudioSoundChannel() {
-                var _this = _super.call(this) || this;
-                /**
-                 * @private
-                 */
-                _this.$startTime = 0;
-                /**
-                 * @private
-                 */
-                _this.bufferSource = null;
-                /**
-                 * @private
-                 */
-                _this.context = oppogame.WebAudioDecode.ctx;
-                //声音是否已经播放完成
-                _this.isStopped = false;
-                /**
-                 * @private
-                 */
-                _this._currentTime = 0;
-                /**
-                 * @private
-                 */
-                _this._volume = 1;
-                /**
-                 * @private
-                 */
-                _this.onPlayEnd = function () {
-                    if (_this.$loops == 1) {
-                        _this.stop();
-                        _this.dispatchEventWith(egret.Event.SOUND_COMPLETE);
-                        return;
-                    }
-                    if (_this.$loops > 0) {
-                        _this.$loops--;
-                    }
-                    /////////////
-                    _this.$play();
-                };
-                /**
-                 * @private
-                 */
-                _this._startTime = 0;
-                if (_this.context["createGain"]) {
-                    _this.gain = _this.context["createGain"]();
-                }
-                else {
-                    _this.gain = _this.context["createGainNode"]();
-                }
-                return _this;
-            }
-            WebAudioSoundChannel.prototype.$play = function () {
-                if (this.isStopped) {
-                    egret.$error(1036);
-                    return;
-                }
-                if (this.bufferSource) {
-                    this.bufferSource.onended = null;
-                    this.bufferSource = null;
-                }
-                var context = this.context;
-                var gain = this.gain;
-                var bufferSource = context.createBufferSource();
-                this.bufferSource = bufferSource;
-                bufferSource.buffer = this.$audioBuffer;
-                bufferSource.connect(gain);
-                gain.connect(context.destination);
-                bufferSource.onended = this.onPlayEnd;
-                this._startTime = Date.now();
-                this.gain.gain.value = this._volume;
-                bufferSource.start(0, this.$startTime);
-                this._currentTime = 0;
-            };
-            WebAudioSoundChannel.prototype.stop = function () {
-                if (this.bufferSource) {
-                    var sourceNode = this.bufferSource;
-                    if (sourceNode.stop) {
-                        sourceNode.stop(0);
-                    }
-                    else {
-                        sourceNode.noteOff(0);
-                    }
-                    sourceNode.onended = null;
-                    sourceNode.disconnect();
-                    this.bufferSource = null;
-                    this.$audioBuffer = null;
-                }
-                if (!this.isStopped) {
-                    egret.sys.$popSoundChannel(this);
-                }
-                this.isStopped = true;
-            };
-            Object.defineProperty(WebAudioSoundChannel.prototype, "volume", {
-                /**
-                 * @private
-                 * @inheritDoc
-                 */
-                get: function () {
-                    return this._volume;
-                },
-                /**
-                 * @inheritDoc
-                 */
-                set: function (value) {
-                    if (this.isStopped) {
-                        egret.$error(1036);
-                        return;
-                    }
-                    this._volume = value;
-                    this.gain.gain.value = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(WebAudioSoundChannel.prototype, "position", {
-                /**
-                 * @private
-                 * @inheritDoc
-                 */
-                get: function () {
-                    if (this.bufferSource) {
-                        return (Date.now() - this._startTime) / 1000 + this.$startTime;
-                    }
-                    return 0;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            return WebAudioSoundChannel;
-        }(egret.EventDispatcher));
-        oppogame.WebAudioSoundChannel = WebAudioSoundChannel;
-        __reflect(WebAudioSoundChannel.prototype, "egret.oppogame.WebAudioSoundChannel", ["egret.SoundChannel", "egret.IEventDispatcher"]);
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -1596,8 +1334,7 @@ if (window['HTMLVideoElement'] == undefined) {
                     var message = egret.sys.tr(1052, this._url);
                     egret.warn(message);
                 }
-                //小米平台会自动抛出 error 事件，不用再发送一次
-                // this.dispatchEventWith(IOErrorEvent.IO_ERROR);
+                this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
             };
             /**
              * @private
@@ -3040,28 +2777,11 @@ egret.Capabilities["runtimeType" + ""] = "oppogame";
         /**
          * @private
          */
-        var WebExternalInterface = (function () {
-            function WebExternalInterface() {
-            }
-            /**
-             * @private
-             * @param functionName
-             * @param value
-             */
-            WebExternalInterface.call = function (functionName, value) {
-            };
-            /**
-             * @private
-             * @param functionName
-             * @param listener
-             */
-            WebExternalInterface.addCallback = function (functionName, listener) {
-            };
-            return WebExternalInterface;
-        }());
-        oppogame.WebExternalInterface = WebExternalInterface;
-        __reflect(WebExternalInterface.prototype, "egret.oppogame.WebExternalInterface", ["egret.ExternalInterface"]);
-        egret.ExternalInterface = WebExternalInterface;
+        function getOption(key) {
+            return "";
+        }
+        oppogame.getOption = getOption;
+        egret.getOption = getOption;
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -3099,163 +2819,28 @@ egret.Capabilities["runtimeType" + ""] = "oppogame";
         /**
          * @private
          */
-        var WebPlayer = (function (_super) {
-            __extends(WebPlayer, _super);
-            function WebPlayer(container, options) {
-                var _this = _super.call(this) || this;
-                _this.init(container, options);
-                _this.initOrientation();
-                return _this;
+        var WebExternalInterface = (function () {
+            function WebExternalInterface() {
             }
-            WebPlayer.prototype.init = function (container, options) {
-                var option = this.readOption(container, options);
-                var stage = new egret.Stage();
-                stage.$screen = this;
-                stage.$scaleMode = option.scaleMode;
-                stage.$orientation = option.orientation;
-                stage.$maxTouches = option.maxTouches;
-                stage.frameRate = option.frameRate;
-                qg.setPreferredFramesPerSecond(stage.frameRate);
-                stage.textureScaleFactor = option.textureScaleFactor;
-                var buffer = new egret.sys.RenderBuffer(undefined, undefined, true);
-                var canvas = buffer.surface;
-                this.attachCanvas(container, canvas);
-                var webTouch = new oppogame.WebTouchHandler(stage, canvas);
-                var player = new egret.sys.Player(buffer, stage, option.entryClassName);
-                egret.lifecycle.stage = stage;
-                egret.lifecycle.addLifecycleListener(oppogame.WebLifeCycleHandler);
-                if (option.showFPS || option.showLog) {
-                    player.displayFPS(option.showFPS, option.showLog, option.logFilter, option.fpsStyles);
-                }
-                this.playerOption = option;
-                this.container = container;
-                this.canvas = canvas;
-                this.stage = stage;
-                this.player = player;
-                this.webTouchHandler = webTouch;
-                this.updateScreenSize();
-                this.updateMaxTouches();
-                player.start();
-            };
-            WebPlayer.prototype.initOrientation = function () {
-                var self = this;
-                window.addEventListener("orientationchange", function () {
-                    window.setTimeout(function () {
-                        egret.StageOrientationEvent.dispatchStageOrientationEvent(self.stage, egret.StageOrientationEvent.ORIENTATION_CHANGE);
-                    }, 350);
-                });
-            };
             /**
-             * 读取初始化参数
+             * @private
+             * @param functionName
+             * @param value
              */
-            WebPlayer.prototype.readOption = function (container, options) {
-                var option = {};
-                option.entryClassName = options.entryClassName || "Main";
-                option.scaleMode = options.scaleMode || egret.StageScaleMode.FIXED_WIDTH;
-                if (option.scaleMode == egret.StageScaleMode.SHOW_ALL) {
-                    option.scaleMode = egret.StageScaleMode.FIXED_WIDE;
-                    var message = egret.sys.tr(4500, "showAll", "fixedWidth");
-                    console.warn(message);
-                }
-                option.frameRate = options.frameRate || 30;
-                option.contentWidth = options.contentWidth || 640;
-                option.contentHeight = options.contentHeight || 1136;
-                option.orientation = options.orientation || egret.OrientationMode.AUTO;
-                option.maxTouches = options.maxTouches;
-                option.textureScaleFactor = 1;
-                option.showFPS = options.showFPS;
-                var styleStr = options.fpsStyles || "x:0,y:0,size:12,textColor:0xffffff,bgAlpha:0.9";
-                var stylesArr = styleStr.split(",");
-                var styles = {};
-                for (var i = 0; i < stylesArr.length; i++) {
-                    var tempStyleArr = stylesArr[i].split(":");
-                    styles[tempStyleArr[0]] = tempStyleArr[1];
-                }
-                option.fpsStyles = styles;
-                option.showLog = false;
-                option.logFilter = "";
-                return option;
+            WebExternalInterface.call = function (functionName, value) {
             };
             /**
              * @private
-             * 添加canvas到container。
+             * @param functionName
+             * @param listener
              */
-            WebPlayer.prototype.attachCanvas = function (container, canvas) {
-                // let style = canvas.style;
-                // style.cursor = "inherit";
-                // style.position = "absolute";
-                // style.top = "0";
-                // style.bottom = "0";
-                // style.left = "0";
-                // style.right = "0";
-                // container.appendChild(canvas);
-                // style = container.style;
-                // style.overflow = "hidden";
-                // style.position = "absolute";
+            WebExternalInterface.addCallback = function (functionName, listener) {
             };
-            /**
-             * @private
-             * 更新播放器视口尺寸
-             */
-            WebPlayer.prototype.updateScreenSize = function () {
-                var canvas = this.canvas;
-                if (canvas['userTyping'])
-                    return;
-                var option = this.playerOption;
-                var boundingClientWidth = window.innerWidth;
-                var boundingClientHeight = window.innerHeight;
-                var shouldRotate = false;
-                var orientation = this.stage.$orientation;
-                if (orientation != egret.OrientationMode.AUTO) {
-                    shouldRotate = orientation != egret.OrientationMode.PORTRAIT && boundingClientHeight > boundingClientWidth
-                        || orientation == egret.OrientationMode.PORTRAIT && boundingClientWidth > boundingClientHeight;
-                }
-                var screenWidth = shouldRotate ? boundingClientHeight : boundingClientWidth;
-                var screenHeight = shouldRotate ? boundingClientWidth : boundingClientHeight;
-                egret.Capabilities["boundingClientWidth" + ""] = screenWidth;
-                egret.Capabilities["boundingClientHeight" + ""] = screenHeight;
-                var stageSize = egret.sys.screenAdapter.calculateStageSize(this.stage.$scaleMode, screenWidth, screenHeight, option.contentWidth, option.contentHeight);
-                var stageWidth = stageSize.stageWidth;
-                var stageHeight = stageSize.stageHeight;
-                var displayWidth = stageSize.displayWidth;
-                var displayHeight = stageSize.displayHeight;
-                // canvas.style[getPrefixStyleName("transformOrigin")] = "0% 0% 0px";
-                if (canvas.width != stageWidth) {
-                    canvas.width = stageWidth;
-                }
-                if (canvas.height != stageHeight) {
-                    canvas.height = stageHeight;
-                }
-                var rotation = 0;
-                var scalex = displayWidth / stageWidth, scaley = displayHeight / stageHeight;
-                var canvasScaleX = scalex * egret.sys.DisplayList.$canvasScaleFactor;
-                var canvasScaleY = scaley * egret.sys.DisplayList.$canvasScaleFactor;
-                var m = new egret.Matrix();
-                m.scale(scalex / canvasScaleX, scaley / canvasScaleY);
-                m.rotate(rotation * Math.PI / 180);
-                var transform = "matrix(" + m.a + "," + m.b + "," + m.c + "," + m.d + "," + m.tx + "," + m.ty + ")";
-                // canvas.style[getPrefixStyleName("transform")] = transform;
-                egret.sys.DisplayList.$setCanvasScale(canvasScaleX, canvasScaleY);
-                this.webTouchHandler.updateScaleMode(scalex, scaley, rotation);
-                this.player.updateStageSize(stageWidth, stageHeight); //不要在这个方法后面修改属性
-            };
-            WebPlayer.prototype.setContentSize = function (width, height) {
-                var option = this.playerOption;
-                option.contentWidth = width;
-                option.contentHeight = height;
-                this.updateScreenSize();
-            };
-            /**
-             * @private
-             * 更新触摸数量
-             */
-            WebPlayer.prototype.updateMaxTouches = function () {
-                this.webTouchHandler.$updateMaxTouches();
-            };
-            return WebPlayer;
-        }(egret.HashObject));
-        oppogame.WebPlayer = WebPlayer;
-        __reflect(WebPlayer.prototype, "egret.oppogame.WebPlayer", ["egret.sys.Screen"]);
+            return WebExternalInterface;
+        }());
+        oppogame.WebExternalInterface = WebExternalInterface;
+        __reflect(WebExternalInterface.prototype, "egret.oppogame.WebExternalInterface", ["egret.ExternalInterface"]);
+        egret.ExternalInterface = WebExternalInterface;
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////

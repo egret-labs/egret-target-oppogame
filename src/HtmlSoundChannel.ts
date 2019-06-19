@@ -120,7 +120,6 @@ namespace egret.oppogame {
             //延迟一定时间再停止，规避chrome报错
             window.setTimeout(function () {
                 audio.pause();
-                HtmlSound.$recycle(url, audio);
             }, 200);
         }
 
