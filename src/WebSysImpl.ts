@@ -205,6 +205,17 @@ namespace egret.oppogame {
     }
     egret.sys.resizeCanvasRenderBuffer = resizeCanvasRenderBuffer;
 
+    function getDOMParser(): DOMParser {
+        if (!window["DOMParser"]) {
+            console.error("没有 XML 支持库，请访问 http://developer.egret.com/cn/github/egret-docs/Engine2D/minigame/minigameFAQ/index.html#xml 了解详情");
+        }
+        else {
+            return new DOMParser();
+        }
+        return null;
+    }
+    egret.sys.getDOMParser = getDOMParser;
+
     egret.Geolocation = egret.oppogame.WebGeolocation;
     egret.Motion = egret.oppogame.WebMotion;
 }
