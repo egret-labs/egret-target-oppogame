@@ -172,166 +172,132 @@ r.prototype = e.prototype, t.prototype = new r();
 (function (egret) {
     var oppogame;
     (function (oppogame) {
+        var sharedCanvas;
+        var sharedContext;
         /**
          * @private
          */
-        var WebPlayer = (function (_super) {
-            __extends(WebPlayer, _super);
-            function WebPlayer(container, options) {
-                var _this = _super.call(this) || this;
-                _this.init(container, options);
-                _this.initOrientation();
-                return _this;
+        function convertImageToCanvas(texture, rect) {
+            if (!sharedCanvas) {
+                sharedCanvas = document.createElement("canvas");
+                sharedContext = sharedCanvas.getContext("2d");
             }
-            WebPlayer.prototype.init = function (container, options) {
-                var option = this.readOption(container, options);
-                var stage = new egret.Stage();
-                stage.$screen = this;
-                stage.$scaleMode = option.scaleMode;
-                stage.$orientation = option.orientation;
-                stage.$maxTouches = option.maxTouches;
-                stage.frameRate = option.frameRate;
-                qg.setPreferredFramesPerSecond(stage.frameRate);
-                stage.textureScaleFactor = option.textureScaleFactor;
-                var buffer = new egret.sys.RenderBuffer(undefined, undefined, true);
-                var canvas = buffer.surface;
-                this.attachCanvas(container, canvas);
-                var webTouch = new oppogame.WebTouchHandler(stage, canvas);
-                var player = new egret.sys.Player(buffer, stage, option.entryClassName);
-                egret.lifecycle.stage = stage;
-                egret.lifecycle.addLifecycleListener(oppogame.WebLifeCycleHandler);
-                if (option.showFPS || option.showLog) {
-                    player.displayFPS(option.showFPS, option.showLog, option.logFilter, option.fpsStyles);
+            var w = texture.$getTextureWidth();
+            var h = texture.$getTextureHeight();
+            if (rect == null) {
+                rect = egret.$TempRectangle;
+                rect.x = 0;
+                rect.y = 0;
+                rect.width = w;
+                rect.height = h;
+            }
+            rect.x = Math.min(rect.x, w - 1);
+            rect.y = Math.min(rect.y, h - 1);
+            rect.width = Math.min(rect.width, w - rect.x);
+            rect.height = Math.min(rect.height, h - rect.y);
+            var iWidth = Math.floor(rect.width);
+            var iHeight = Math.floor(rect.height);
+            var surface = sharedCanvas;
+            surface["style"]["width"] = iWidth + "px";
+            surface["style"]["height"] = iHeight + "px";
+            sharedCanvas.width = iWidth;
+            sharedCanvas.height = iHeight;
+            if (egret.Capabilities.renderMode == "webgl") {
+                var renderTexture = void 0;
+                //webgl下非RenderTexture纹理先画到RenderTexture
+                if (!texture.$renderBuffer) {
+                    renderTexture = new egret.RenderTexture();
+                    renderTexture.drawToTexture(new egret.Bitmap(texture));
                 }
-                this.playerOption = option;
-                this.container = container;
-                this.canvas = canvas;
-                this.stage = stage;
-                this.player = player;
-                this.webTouchHandler = webTouch;
-                this.updateScreenSize();
-                this.updateMaxTouches();
-                player.start();
-            };
-            WebPlayer.prototype.initOrientation = function () {
-                var self = this;
-                window.addEventListener("orientationchange", function () {
-                    window.setTimeout(function () {
-                        egret.StageOrientationEvent.dispatchStageOrientationEvent(self.stage, egret.StageOrientationEvent.ORIENTATION_CHANGE);
-                    }, 350);
-                });
-            };
-            /**
-             * 读取初始化参数
-             */
-            WebPlayer.prototype.readOption = function (container, options) {
-                var option = {};
-                option.entryClassName = options.entryClassName || "Main";
-                option.scaleMode = options.scaleMode || egret.StageScaleMode.FIXED_WIDTH;
-                if (option.scaleMode == egret.StageScaleMode.SHOW_ALL) {
-                    option.scaleMode = egret.StageScaleMode.FIXED_WIDE;
-                    var message = egret.sys.tr(4500, "showAll", "fixedWidth");
-                    console.warn(message);
+                else {
+                    renderTexture = texture;
                 }
-                option.frameRate = options.frameRate || 30;
-                option.contentWidth = options.contentWidth || 640;
-                option.contentHeight = options.contentHeight || 1136;
-                option.orientation = options.orientation || egret.OrientationMode.AUTO;
-                option.maxTouches = options.maxTouches;
-                option.textureScaleFactor = 1;
-                option.showFPS = options.showFPS;
-                var styleStr = options.fpsStyles || "x:0,y:0,size:12,textColor:0xffffff,bgAlpha:0.9";
-                var stylesArr = styleStr.split(",");
-                var styles = {};
-                for (var i = 0; i < stylesArr.length; i++) {
-                    var tempStyleArr = stylesArr[i].split(":");
-                    styles[tempStyleArr[0]] = tempStyleArr[1];
+                //从RenderTexture中读取像素数据，填入canvas
+                var pixels = renderTexture.$renderBuffer.getPixels(rect.x, rect.y, iWidth, iHeight);
+                var x = 0;
+                var y = 0;
+                for (var i = 0; i < pixels.length; i += 4) {
+                    sharedContext.fillStyle =
+                        'rgba(' + pixels[i]
+                            + ',' + pixels[i + 1]
+                            + ',' + pixels[i + 2]
+                            + ',' + (pixels[i + 3] / 255) + ')';
+                    sharedContext.fillRect(x, y, 1, 1);
+                    x++;
+                    if (x == iWidth) {
+                        x = 0;
+                        y++;
+                    }
                 }
-                option.fpsStyles = styles;
-                option.showLog = false;
-                option.logFilter = "";
-                return option;
-            };
-            /**
-             * @private
-             * 添加canvas到container。
-             */
-            WebPlayer.prototype.attachCanvas = function (container, canvas) {
-                // let style = canvas.style;
-                // style.cursor = "inherit";
-                // style.position = "absolute";
-                // style.top = "0";
-                // style.bottom = "0";
-                // style.left = "0";
-                // style.right = "0";
-                // container.appendChild(canvas);
-                // style = container.style;
-                // style.overflow = "hidden";
-                // style.position = "absolute";
-            };
-            /**
-             * @private
-             * 更新播放器视口尺寸
-             */
-            WebPlayer.prototype.updateScreenSize = function () {
-                var canvas = this.canvas;
-                if (canvas['userTyping'])
-                    return;
-                var option = this.playerOption;
-                var boundingClientWidth = window.innerWidth;
-                var boundingClientHeight = window.innerHeight;
-                var shouldRotate = false;
-                var orientation = this.stage.$orientation;
-                if (orientation != egret.OrientationMode.AUTO) {
-                    shouldRotate = orientation != egret.OrientationMode.PORTRAIT && boundingClientHeight > boundingClientWidth
-                        || orientation == egret.OrientationMode.PORTRAIT && boundingClientWidth > boundingClientHeight;
+                if (!texture.$renderBuffer) {
+                    renderTexture.dispose();
                 }
-                var screenWidth = shouldRotate ? boundingClientHeight : boundingClientWidth;
-                var screenHeight = shouldRotate ? boundingClientWidth : boundingClientHeight;
-                egret.Capabilities["boundingClientWidth" + ""] = screenWidth;
-                egret.Capabilities["boundingClientHeight" + ""] = screenHeight;
-                var stageSize = egret.sys.screenAdapter.calculateStageSize(this.stage.$scaleMode, screenWidth, screenHeight, option.contentWidth, option.contentHeight);
-                var stageWidth = stageSize.stageWidth;
-                var stageHeight = stageSize.stageHeight;
-                var displayWidth = stageSize.displayWidth;
-                var displayHeight = stageSize.displayHeight;
-                // canvas.style[getPrefixStyleName("transformOrigin")] = "0% 0% 0px";
-                if (canvas.width != stageWidth) {
-                    canvas.width = stageWidth;
+                return surface;
+            }
+            else {
+                var bitmapData = texture;
+                var offsetX = Math.round(bitmapData.$offsetX);
+                var offsetY = Math.round(bitmapData.$offsetY);
+                var bitmapWidth = bitmapData.$bitmapWidth;
+                var bitmapHeight = bitmapData.$bitmapHeight;
+                sharedContext.drawImage(bitmapData.$bitmapData.source, bitmapData.$bitmapX + rect.x / egret.$TextureScaleFactor, bitmapData.$bitmapY + rect.y / egret.$TextureScaleFactor, bitmapWidth * rect.width / w, bitmapHeight * rect.height / h, offsetX, offsetY, rect.width, rect.height);
+                return surface;
+            }
+        }
+        /**
+         * @private
+         */
+        function toDataURL(type, rect, encoderOptions) {
+            try {
+                var surface = convertImageToCanvas(this, rect);
+                var result = surface.toDataURL(type, encoderOptions);
+                return result;
+            }
+            catch (e) {
+                egret.$error(1033);
+            }
+            return null;
+        }
+        /**
+         * 有些杀毒软件认为 saveToFile 可能是一个病毒文件
+         */
+        function eliFoTevas(type, filePath, rect, encoderOptions) {
+        }
+        function getPixel32(x, y) {
+            egret.$warn(1041, "getPixel32", "getPixels");
+            return this.getPixels(x, y);
+        }
+        function getPixels(x, y, width, height) {
+            if (width === void 0) { width = 1; }
+            if (height === void 0) { height = 1; }
+            //webgl环境下不需要转换成canvas获取像素信息
+            if (egret.Capabilities.renderMode == "webgl") {
+                var renderTexture = void 0;
+                //webgl下非RenderTexture纹理先画到RenderTexture
+                if (!this.$renderBuffer) {
+                    renderTexture = new egret.RenderTexture();
+                    renderTexture.drawToTexture(new egret.Bitmap(this));
                 }
-                if (canvas.height != stageHeight) {
-                    canvas.height = stageHeight;
+                else {
+                    renderTexture = this;
                 }
-                var rotation = 0;
-                var scalex = displayWidth / stageWidth, scaley = displayHeight / stageHeight;
-                var canvasScaleX = scalex * egret.sys.DisplayList.$canvasScaleFactor;
-                var canvasScaleY = scaley * egret.sys.DisplayList.$canvasScaleFactor;
-                var m = new egret.Matrix();
-                m.scale(scalex / canvasScaleX, scaley / canvasScaleY);
-                m.rotate(rotation * Math.PI / 180);
-                var transform = "matrix(" + m.a + "," + m.b + "," + m.c + "," + m.d + "," + m.tx + "," + m.ty + ")";
-                // canvas.style[getPrefixStyleName("transform")] = transform;
-                egret.sys.DisplayList.$setCanvasScale(canvasScaleX, canvasScaleY);
-                this.webTouchHandler.updateScaleMode(scalex, scaley, rotation);
-                this.player.updateStageSize(stageWidth, stageHeight); //不要在这个方法后面修改属性
-            };
-            WebPlayer.prototype.setContentSize = function (width, height) {
-                var option = this.playerOption;
-                option.contentWidth = width;
-                option.contentHeight = height;
-                this.updateScreenSize();
-            };
-            /**
-             * @private
-             * 更新触摸数量
-             */
-            WebPlayer.prototype.updateMaxTouches = function () {
-                this.webTouchHandler.$updateMaxTouches();
-            };
-            return WebPlayer;
-        }(egret.HashObject));
-        oppogame.WebPlayer = WebPlayer;
-        __reflect(WebPlayer.prototype, "egret.oppogame.WebPlayer", ["egret.sys.Screen"]);
+                //从RenderTexture中读取像素数据
+                var pixels = renderTexture.$renderBuffer.getPixels(x, y, width, height);
+                return pixels;
+            }
+            try {
+                var surface = convertImageToCanvas(this);
+                var result = sharedContext.getImageData(x, y, width, height).data;
+                return result;
+            }
+            catch (e) {
+                egret.$error(1039);
+            }
+        }
+        egret.Texture.prototype.toDataURL = toDataURL;
+        egret.Texture.prototype.saveToFile = eliFoTevas;
+        egret.Texture.prototype.getPixel32 = getPixel32;
+        egret.Texture.prototype.getPixels = getPixels;
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -2781,28 +2747,163 @@ egret.Capabilities["runtimeType" + ""] = "oppogame";
         /**
          * @private
          */
-        var WebExternalInterface = (function () {
-            function WebExternalInterface() {
+        var WebPlayer = (function (_super) {
+            __extends(WebPlayer, _super);
+            function WebPlayer(container, options) {
+                var _this = _super.call(this) || this;
+                _this.init(container, options);
+                _this.initOrientation();
+                return _this;
             }
+            WebPlayer.prototype.init = function (container, options) {
+                var option = this.readOption(container, options);
+                var stage = new egret.Stage();
+                stage.$screen = this;
+                stage.$scaleMode = option.scaleMode;
+                stage.$orientation = option.orientation;
+                stage.$maxTouches = option.maxTouches;
+                stage.frameRate = option.frameRate;
+                qg.setPreferredFramesPerSecond(stage.frameRate);
+                stage.textureScaleFactor = option.textureScaleFactor;
+                var buffer = new egret.sys.RenderBuffer(undefined, undefined, true);
+                var canvas = buffer.surface;
+                this.attachCanvas(container, canvas);
+                var webTouch = new oppogame.WebTouchHandler(stage, canvas);
+                var player = new egret.sys.Player(buffer, stage, option.entryClassName);
+                egret.lifecycle.stage = stage;
+                egret.lifecycle.addLifecycleListener(oppogame.WebLifeCycleHandler);
+                if (option.showFPS || option.showLog) {
+                    player.displayFPS(option.showFPS, option.showLog, option.logFilter, option.fpsStyles);
+                }
+                this.playerOption = option;
+                this.container = container;
+                this.canvas = canvas;
+                this.stage = stage;
+                this.player = player;
+                this.webTouchHandler = webTouch;
+                this.updateScreenSize();
+                this.updateMaxTouches();
+                player.start();
+            };
+            WebPlayer.prototype.initOrientation = function () {
+                var self = this;
+                window.addEventListener("orientationchange", function () {
+                    window.setTimeout(function () {
+                        egret.StageOrientationEvent.dispatchStageOrientationEvent(self.stage, egret.StageOrientationEvent.ORIENTATION_CHANGE);
+                    }, 350);
+                });
+            };
             /**
-             * @private
-             * @param functionName
-             * @param value
+             * 读取初始化参数
              */
-            WebExternalInterface.call = function (functionName, value) {
+            WebPlayer.prototype.readOption = function (container, options) {
+                var option = {};
+                option.entryClassName = options.entryClassName || "Main";
+                option.scaleMode = options.scaleMode || egret.StageScaleMode.FIXED_WIDTH;
+                if (option.scaleMode == egret.StageScaleMode.SHOW_ALL) {
+                    option.scaleMode = egret.StageScaleMode.FIXED_WIDE;
+                    var message = egret.sys.tr(4500, "showAll", "fixedWidth");
+                    console.warn(message);
+                }
+                option.frameRate = options.frameRate || 30;
+                option.contentWidth = options.contentWidth || 640;
+                option.contentHeight = options.contentHeight || 1136;
+                option.orientation = options.orientation || egret.OrientationMode.AUTO;
+                option.maxTouches = options.maxTouches;
+                option.textureScaleFactor = 1;
+                option.showFPS = options.showFPS;
+                var styleStr = options.fpsStyles || "x:0,y:0,size:12,textColor:0xffffff,bgAlpha:0.9";
+                var stylesArr = styleStr.split(",");
+                var styles = {};
+                for (var i = 0; i < stylesArr.length; i++) {
+                    var tempStyleArr = stylesArr[i].split(":");
+                    styles[tempStyleArr[0]] = tempStyleArr[1];
+                }
+                option.fpsStyles = styles;
+                option.showLog = false;
+                option.logFilter = "";
+                return option;
             };
             /**
              * @private
-             * @param functionName
-             * @param listener
+             * 添加canvas到container。
              */
-            WebExternalInterface.addCallback = function (functionName, listener) {
+            WebPlayer.prototype.attachCanvas = function (container, canvas) {
+                // let style = canvas.style;
+                // style.cursor = "inherit";
+                // style.position = "absolute";
+                // style.top = "0";
+                // style.bottom = "0";
+                // style.left = "0";
+                // style.right = "0";
+                // container.appendChild(canvas);
+                // style = container.style;
+                // style.overflow = "hidden";
+                // style.position = "absolute";
             };
-            return WebExternalInterface;
-        }());
-        oppogame.WebExternalInterface = WebExternalInterface;
-        __reflect(WebExternalInterface.prototype, "egret.oppogame.WebExternalInterface", ["egret.ExternalInterface"]);
-        egret.ExternalInterface = WebExternalInterface;
+            /**
+             * @private
+             * 更新播放器视口尺寸
+             */
+            WebPlayer.prototype.updateScreenSize = function () {
+                var canvas = this.canvas;
+                if (canvas['userTyping'])
+                    return;
+                var option = this.playerOption;
+                var boundingClientWidth = window.innerWidth;
+                var boundingClientHeight = window.innerHeight;
+                var shouldRotate = false;
+                var orientation = this.stage.$orientation;
+                if (orientation != egret.OrientationMode.AUTO) {
+                    shouldRotate = orientation != egret.OrientationMode.PORTRAIT && boundingClientHeight > boundingClientWidth
+                        || orientation == egret.OrientationMode.PORTRAIT && boundingClientWidth > boundingClientHeight;
+                }
+                var screenWidth = shouldRotate ? boundingClientHeight : boundingClientWidth;
+                var screenHeight = shouldRotate ? boundingClientWidth : boundingClientHeight;
+                egret.Capabilities["boundingClientWidth" + ""] = screenWidth;
+                egret.Capabilities["boundingClientHeight" + ""] = screenHeight;
+                var stageSize = egret.sys.screenAdapter.calculateStageSize(this.stage.$scaleMode, screenWidth, screenHeight, option.contentWidth, option.contentHeight);
+                var stageWidth = stageSize.stageWidth;
+                var stageHeight = stageSize.stageHeight;
+                var displayWidth = stageSize.displayWidth;
+                var displayHeight = stageSize.displayHeight;
+                // canvas.style[getPrefixStyleName("transformOrigin")] = "0% 0% 0px";
+                if (canvas.width != stageWidth) {
+                    canvas.width = stageWidth;
+                }
+                if (canvas.height != stageHeight) {
+                    canvas.height = stageHeight;
+                }
+                var rotation = 0;
+                var scalex = displayWidth / stageWidth, scaley = displayHeight / stageHeight;
+                var canvasScaleX = scalex * egret.sys.DisplayList.$canvasScaleFactor;
+                var canvasScaleY = scaley * egret.sys.DisplayList.$canvasScaleFactor;
+                var m = new egret.Matrix();
+                m.scale(scalex / canvasScaleX, scaley / canvasScaleY);
+                m.rotate(rotation * Math.PI / 180);
+                var transform = "matrix(" + m.a + "," + m.b + "," + m.c + "," + m.d + "," + m.tx + "," + m.ty + ")";
+                // canvas.style[getPrefixStyleName("transform")] = transform;
+                egret.sys.DisplayList.$setCanvasScale(canvasScaleX, canvasScaleY);
+                this.webTouchHandler.updateScaleMode(scalex, scaley, rotation);
+                this.player.updateStageSize(stageWidth, stageHeight); //不要在这个方法后面修改属性
+            };
+            WebPlayer.prototype.setContentSize = function (width, height) {
+                var option = this.playerOption;
+                option.contentWidth = width;
+                option.contentHeight = height;
+                this.updateScreenSize();
+            };
+            /**
+             * @private
+             * 更新触摸数量
+             */
+            WebPlayer.prototype.updateMaxTouches = function () {
+                this.webTouchHandler.$updateMaxTouches();
+            };
+            return WebPlayer;
+        }(egret.HashObject));
+        oppogame.WebPlayer = WebPlayer;
+        __reflect(WebPlayer.prototype, "egret.oppogame.WebPlayer", ["egret.sys.Screen"]);
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -2837,132 +2938,31 @@ egret.Capabilities["runtimeType" + ""] = "oppogame";
 (function (egret) {
     var oppogame;
     (function (oppogame) {
-        var sharedCanvas;
-        var sharedContext;
         /**
          * @private
          */
-        function convertImageToCanvas(texture, rect) {
-            if (!sharedCanvas) {
-                sharedCanvas = document.createElement("canvas");
-                sharedContext = sharedCanvas.getContext("2d");
+        var WebExternalInterface = (function () {
+            function WebExternalInterface() {
             }
-            var w = texture.$getTextureWidth();
-            var h = texture.$getTextureHeight();
-            if (rect == null) {
-                rect = egret.$TempRectangle;
-                rect.x = 0;
-                rect.y = 0;
-                rect.width = w;
-                rect.height = h;
-            }
-            rect.x = Math.min(rect.x, w - 1);
-            rect.y = Math.min(rect.y, h - 1);
-            rect.width = Math.min(rect.width, w - rect.x);
-            rect.height = Math.min(rect.height, h - rect.y);
-            var iWidth = Math.floor(rect.width);
-            var iHeight = Math.floor(rect.height);
-            var surface = sharedCanvas;
-            surface["style"]["width"] = iWidth + "px";
-            surface["style"]["height"] = iHeight + "px";
-            sharedCanvas.width = iWidth;
-            sharedCanvas.height = iHeight;
-            if (egret.Capabilities.renderMode == "webgl") {
-                var renderTexture = void 0;
-                //webgl下非RenderTexture纹理先画到RenderTexture
-                if (!texture.$renderBuffer) {
-                    renderTexture = new egret.RenderTexture();
-                    renderTexture.drawToTexture(new egret.Bitmap(texture));
-                }
-                else {
-                    renderTexture = texture;
-                }
-                //从RenderTexture中读取像素数据，填入canvas
-                var pixels = renderTexture.$renderBuffer.getPixels(rect.x, rect.y, iWidth, iHeight);
-                var x = 0;
-                var y = 0;
-                for (var i = 0; i < pixels.length; i += 4) {
-                    sharedContext.fillStyle =
-                        'rgba(' + pixels[i]
-                            + ',' + pixels[i + 1]
-                            + ',' + pixels[i + 2]
-                            + ',' + (pixels[i + 3] / 255) + ')';
-                    sharedContext.fillRect(x, y, 1, 1);
-                    x++;
-                    if (x == iWidth) {
-                        x = 0;
-                        y++;
-                    }
-                }
-                if (!texture.$renderBuffer) {
-                    renderTexture.dispose();
-                }
-                return surface;
-            }
-            else {
-                var bitmapData = texture;
-                var offsetX = Math.round(bitmapData.$offsetX);
-                var offsetY = Math.round(bitmapData.$offsetY);
-                var bitmapWidth = bitmapData.$bitmapWidth;
-                var bitmapHeight = bitmapData.$bitmapHeight;
-                sharedContext.drawImage(bitmapData.$bitmapData.source, bitmapData.$bitmapX + rect.x / egret.$TextureScaleFactor, bitmapData.$bitmapY + rect.y / egret.$TextureScaleFactor, bitmapWidth * rect.width / w, bitmapHeight * rect.height / h, offsetX, offsetY, rect.width, rect.height);
-                return surface;
-            }
-        }
-        /**
-         * @private
-         */
-        function toDataURL(type, rect, encoderOptions) {
-            try {
-                var surface = convertImageToCanvas(this, rect);
-                var result = surface.toDataURL(type, encoderOptions);
-                return result;
-            }
-            catch (e) {
-                egret.$error(1033);
-            }
-            return null;
-        }
-        /**
-         * 有些杀毒软件认为 saveToFile 可能是一个病毒文件
-         */
-        function eliFoTevas(type, filePath, rect, encoderOptions) {
-        }
-        function getPixel32(x, y) {
-            egret.$warn(1041, "getPixel32", "getPixels");
-            return this.getPixels(x, y);
-        }
-        function getPixels(x, y, width, height) {
-            if (width === void 0) { width = 1; }
-            if (height === void 0) { height = 1; }
-            //webgl环境下不需要转换成canvas获取像素信息
-            if (egret.Capabilities.renderMode == "webgl") {
-                var renderTexture = void 0;
-                //webgl下非RenderTexture纹理先画到RenderTexture
-                if (!this.$renderBuffer) {
-                    renderTexture = new egret.RenderTexture();
-                    renderTexture.drawToTexture(new egret.Bitmap(this));
-                }
-                else {
-                    renderTexture = this;
-                }
-                //从RenderTexture中读取像素数据
-                var pixels = renderTexture.$renderBuffer.getPixels(x, y, width, height);
-                return pixels;
-            }
-            try {
-                var surface = convertImageToCanvas(this);
-                var result = sharedContext.getImageData(x, y, width, height).data;
-                return result;
-            }
-            catch (e) {
-                egret.$error(1039);
-            }
-        }
-        egret.Texture.prototype.toDataURL = toDataURL;
-        egret.Texture.prototype.saveToFile = eliFoTevas;
-        egret.Texture.prototype.getPixel32 = getPixel32;
-        egret.Texture.prototype.getPixels = getPixels;
+            /**
+             * @private
+             * @param functionName
+             * @param value
+             */
+            WebExternalInterface.call = function (functionName, value) {
+            };
+            /**
+             * @private
+             * @param functionName
+             * @param listener
+             */
+            WebExternalInterface.addCallback = function (functionName, listener) {
+            };
+            return WebExternalInterface;
+        }());
+        oppogame.WebExternalInterface = WebExternalInterface;
+        __reflect(WebExternalInterface.prototype, "egret.oppogame.WebExternalInterface", ["egret.ExternalInterface"]);
+        egret.ExternalInterface = WebExternalInterface;
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -5725,19 +5725,6 @@ if (window['HTMLVideoElement'] == undefined) {
         /**
          * @private
          */
-        var WEBGL_ATTRIBUTE_TYPE;
-        (function (WEBGL_ATTRIBUTE_TYPE) {
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC2"] = 35664] = "FLOAT_VEC2";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC3"] = 35665] = "FLOAT_VEC3";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC4"] = 35666] = "FLOAT_VEC4";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT"] = 5126] = "FLOAT";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["BYTE"] = 65535] = "BYTE";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["UNSIGNED_BYTE"] = 5121] = "UNSIGNED_BYTE";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["UNSIGNED_SHORT"] = 5123] = "UNSIGNED_SHORT";
-        })(WEBGL_ATTRIBUTE_TYPE = oppogame.WEBGL_ATTRIBUTE_TYPE || (oppogame.WEBGL_ATTRIBUTE_TYPE = {}));
-        /**
-         * @private
-         */
         var EgretWebGLAttribute = (function () {
             function EgretWebGLAttribute(gl, program, attributeData) {
                 this.gl = gl;
@@ -5753,19 +5740,19 @@ if (window['HTMLVideoElement'] == undefined) {
             EgretWebGLAttribute.prototype.initCount = function (gl) {
                 var type = this.type;
                 switch (type) {
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT:
-                    case WEBGL_ATTRIBUTE_TYPE.BYTE:
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_BYTE:
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_SHORT:
+                    case 5126 /* FLOAT */:
+                    case 65535 /* BYTE */:
+                    case 5121 /* UNSIGNED_BYTE */:
+                    case 5123 /* UNSIGNED_SHORT */:
                         this.count = 1;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC2:
+                    case 35664 /* FLOAT_VEC2 */:
                         this.count = 2;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC3:
+                    case 35665 /* FLOAT_VEC3 */:
                         this.count = 3;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC4:
+                    case 35666 /* FLOAT_VEC4 */:
                         this.count = 4;
                         break;
                 }
@@ -5773,19 +5760,19 @@ if (window['HTMLVideoElement'] == undefined) {
             EgretWebGLAttribute.prototype.initFormat = function (gl) {
                 var type = this.type;
                 switch (type) {
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT:
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC2:
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC3:
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC4:
+                    case 5126 /* FLOAT */:
+                    case 35664 /* FLOAT_VEC2 */:
+                    case 35665 /* FLOAT_VEC3 */:
+                    case 35666 /* FLOAT_VEC4 */:
                         this.format = gl.FLOAT;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_BYTE:
+                    case 5121 /* UNSIGNED_BYTE */:
                         this.format = gl.UNSIGNED_BYTE;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_SHORT:
+                    case 5123 /* UNSIGNED_SHORT */:
                         this.format = gl.UNSIGNED_SHORT;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.BYTE:
+                    case 65535 /* BYTE */:
                         this.format = gl.BYTE;
                         break;
                 }
@@ -5796,6 +5783,34 @@ if (window['HTMLVideoElement'] == undefined) {
         __reflect(EgretWebGLAttribute.prototype, "egret.oppogame.EgretWebGLAttribute");
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
