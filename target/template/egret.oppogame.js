@@ -2401,7 +2401,7 @@ if (window['HTMLVideoElement'] == undefined) {
         /**
          * 支持库版本号
          */
-        oppogame.version = "0.1.4";
+        oppogame.version = "0.1.5";
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 (function (egret) {
