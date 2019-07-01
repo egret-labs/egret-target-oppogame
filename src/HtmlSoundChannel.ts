@@ -61,7 +61,6 @@ namespace egret.oppogame {
          */
         constructor(audio: qg.InnerAudioContext) {
             super();
-            audio.onEnded(this.onPlayEnd.bind(this))
             this.audio = audio;
         }
 
@@ -71,6 +70,7 @@ namespace egret.oppogame {
                 return;
             }
             this.audio.play();
+            this.audio.onEnded(this.onPlayEnd.bind(this))
             this.audio.volume = this._volume;
             this.audio.seek(this.$startTime);
         }
