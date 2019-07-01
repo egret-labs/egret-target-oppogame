@@ -132,10 +132,7 @@ namespace egret.oppogame {
                 return;
             }
             this.data = new egret.BitmapData(image);
-            let self = this;
-            window.setTimeout(function (): void {
-                self.dispatchEventWith(Event.COMPLETE);
-            }, 0);
+            this.dispatchEventWith(Event.COMPLETE);
         }
 
         /**
@@ -150,13 +147,10 @@ namespace egret.oppogame {
         }
 
         private dispatchIOError(url: string): void {
-            let self = this;
-            window.setTimeout(function (): void {
-                if (!self.hasEventListener(IOErrorEvent.IO_ERROR)) {
-                    egret.log(1011, url);
-                }
-                self.dispatchEventWith(IOErrorEvent.IO_ERROR);
-            }, 0);
+            if (!this.hasEventListener(IOErrorEvent.IO_ERROR)) {
+                egret.log(1011, url);
+            }
+            this.dispatchEventWith(IOErrorEvent.IO_ERROR);
         }
 
         /**

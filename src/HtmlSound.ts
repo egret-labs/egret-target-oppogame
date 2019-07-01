@@ -106,8 +106,8 @@ namespace egret.oppogame {
 
             this.url = url;
 
-            if (DEBUG && !url) {
-                egret.$error(3002);
+            if (!url) {
+                egret.warn(3002);
             }
             let audio:qg.InnerAudioContext = qg.createInnerAudioContext();
             audio.onCanplay(onAudioLoaded);
@@ -142,8 +142,8 @@ namespace egret.oppogame {
             startTime = +startTime || 0;
             loops = +loops || 0;
 
-            if (DEBUG && this.loaded == false) {
-                egret.$error(1049);
+            if (this.loaded == false) {
+                egret.warn(1049);
             }
 
             let audio = this.originAudio

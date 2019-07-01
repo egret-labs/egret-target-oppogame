@@ -114,13 +114,7 @@ namespace egret.oppogame {
             audio.volume = 0;
             this._volume = 0;
             this.audio = null;
-
-            let url = this.$url;
-
-            //延迟一定时间再停止，规避chrome报错
-            window.setTimeout(function () {
-                audio.pause();
-            }, 200);
+            audio.pause();
         }
 
         /**
