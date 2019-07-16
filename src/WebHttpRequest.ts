@@ -167,16 +167,17 @@ namespace egret.oppogame {
             let xhr = this._xhr;
             if (xhr.readyState == 4) {// 4 = "loaded"
                 let ioError = (xhr.status >= 400 || xhr.status == 0);
-                if (ioError) {//请求错误
-                    if (!this.hasEventListener(IOErrorEvent.IO_ERROR)) {
-                        egret.warn(1011, this._url);
+                window.setTimeout(()=>{
+                    if (ioError) {//请求错误
+                        if (!this.hasEventListener(IOErrorEvent.IO_ERROR)) {
+                            egret.warn(1011, this._url);
+                        }
+                        this.dispatchEventWith(IOErrorEvent.IO_ERROR);
                     }
-                    this.dispatchEventWith(IOErrorEvent.IO_ERROR);
-                }
-                else {
-                    this.dispatchEventWith(Event.COMPLETE);
-                }
-
+                    else {
+                        this.dispatchEventWith(Event.COMPLETE);
+                    }
+                },0)
             }
         }
         private updateProgress(event): void {
