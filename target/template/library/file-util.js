@@ -31,12 +31,12 @@ function walkFile(dirname, callback) {
     }
 }
 
-export const fs = {
+const oppo_fs = {
     /**
      * 遍历删除文件夹
      */
     remove: (dirname) => {
-        let fullPath = SYS_ROOT + path.getLocalFilePath(dirname);
+        let fullPath = SYS_ROOT + oppo_path.getLocalFilePath(dirname);
         oppoFS.stat({
             path: fullPath,
             success: function (res) {
@@ -67,7 +67,7 @@ export const fs = {
         } else if (cache == 1) {
             return true;
         } else {
-            p = path.normailze(p);
+            p = oppo_path.normailze(p);
             try {
                 oppoFS.accessSync(SYS_ROOT + dir)
                 fs_cache[p] = 1;
@@ -85,7 +85,7 @@ export const fs = {
                 url: src,
                 success: function (data) {
                     let tempFilePath = data.tempFilePath;
-                    oppoFS.copyFileSync(tempFilePath, path.getUserPath(target))
+                    oppoFS.copyFileSync(tempFilePath, oppo_path.getUserPath(target))
                     resolve();
                 },
                 fail: function (data, code) {
@@ -96,7 +96,7 @@ export const fs = {
         })
     }
 }
-export const path = {
+const oppo_path = {
     dirname: (p) => {
         const arr = p.split("/");
         arr.pop();
@@ -124,17 +124,17 @@ export const path = {
     // 通过本函数可将网络地址转化为本地缓存地址
     // 可通过编辑key值表来创建多个缓存路径
     getLocalFilePath: (p) => {
-        for (let key in path.localFileMap) {
+        for (let key in oppo_path.localFileMap) {
             if (p.indexOf(key) >= 0) {
-                p = p.replace(key, path.localFileMap[key]);
-                return path.normailze(p);
+                p = p.replace(key, oppo_path.localFileMap[key]);
+                return oppo_path.normailze(p);
             }
         }
         //未设置key值，将按照地址名整理出资源路径，进行存储
         if (p.indexOf(":") >= 0 || p.indexOf('#') >= 0 || p.indexOf('?') >= 0) {
             p = p.replace(/[^a-z0-9.]/gi, "/");
         }
-        return path.normailze(p);
+        return oppo_path.normailze(p);
     },
     // 获取户缓存地址
     getUserPath: (p) => {

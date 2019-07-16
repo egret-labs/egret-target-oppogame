@@ -1,7 +1,3 @@
-const fileutil = require('./file-util');
-const path = fileutil.path;
-const fs = fileutil.fs;
-
 /**
  * 重写的文本加载器，代替引擎默认的文本加载器
  * 该代码中包含了大量日志用于辅助开发者调试
@@ -20,18 +16,18 @@ class TextProcessor {
         if (RES['getVirtualUrl']) {
             xhrURL = RES['getVirtualUrl'](xhrURL);
         }
-        if (path.isRemotePath(xhrURL)) {//判断是本地加载还是网络加载
+        if (oppo_path.isRemotePath(xhrURL)) {//判断是本地加载还是网络加载
             if (needCache(xhrURL)) {//通过缓存机制判断是否本地加载
                 //通过缓存机制加载
-                const targetFilename = path.getLocalFilePath(xhrURL);
-                if (fs.existsSync(targetFilename)) {
+                const targetFilename = oppo_path.getLocalFilePath(xhrURL);
+                if (oppo_fs.existsSync(targetFilename)) {
                     //本地有缓存
-                    return readLoaclText(path.getUserPath(targetFilename));
+                    return readLoaclText(oppo_path.getUserPath(targetFilename));
                 } else {
                     //本地没有缓存,下载
                     return loadText(xhrURL).then((content) => {
                         //下载完成，把文本写到本地
-                        return writeText(path.getUserPath(targetFilename), content)
+                        return writeText(oppo_path.getUserPath(targetFilename), content)
                     })
                 }
             } else {
@@ -115,6 +111,4 @@ function needCache(assUrl) {
     }
 }
 
-
-const processor = new TextProcessor();
-RES.processor.map("text", processor);
+RES.processor.map("text", new TextProcessor());

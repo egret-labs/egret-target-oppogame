@@ -1,7 +1,3 @@
-const fileutil = require('./file-util');
-const path = fileutil.path;
-const fs = fileutil.fs;
-
 /**
  * 重写的声音加载器，代替引擎默认的声音加载器
  * 该代码中包含了大量日志用于辅助开发者调试
@@ -19,21 +15,21 @@ class SoundProcessor {
         if (RES['getVirtualUrl']) {
             soundSrc = RES['getVirtualUrl'](soundSrc);
         }
-        if (path.isRemotePath(soundSrc)) { //判断是本地加载还是网络加载
+        if (oppo_path.isRemotePath(soundSrc)) { //判断是本地加载还是网络加载
             if (!needCache(soundSrc)) {//通过缓存机制判断是否本地加载
                 //无需缓存加载
                 return loadSound(soundSrc);
             } else {
                 //通过缓存机制加载
-                const fullname = path.getLocalFilePath(soundSrc);
-                if (fs.existsSync(fullname)) {
+                const fullname = oppo_path.getLocalFilePath(soundSrc);
+                if (oppo_fs.existsSync(fullname)) {
                     //本地有缓存
-                    return loadSound(path.getUserPath(fullname))
+                    return loadSound(oppo_path.getUserPath(fullname))
                 } else {
                     //本地没有缓存,下载
-                    return fs.downloadFile(soundSrc, fullname).then(() => {
+                    return oppo_fs.downloadFile(soundSrc, fullname).then(() => {
                         //下载完成，再从缓存里读取
-                        return loadSound(path.getUserPath(fullname));
+                        return loadSound(oppo_path.getUserPath(fullname));
                     }, () => {
                         return;
                     })
@@ -82,5 +78,4 @@ function needCache(assUrl) {
 
 
 
-const processor = new SoundProcessor();
-RES.processor.map("sound", processor);
+RES.processor.map("sound", new SoundProcessor());

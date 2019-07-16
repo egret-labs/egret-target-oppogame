@@ -1,8 +1,3 @@
-const fileutil = require('./file-util');
-const path = fileutil.path;
-const fs = fileutil.fs;
-
-
 class BinaryProcessor {
 
     onLoadStart(host, resource) {
@@ -15,21 +10,21 @@ class BinaryProcessor {
         if (RES['getVirtualUrl']) {
             xhrURL = RES['getVirtualUrl'](xhrURL);
         }
-        if (path.isRemotePath(xhrURL)){//判断是本地加载还是网络加载
+        if (oppo_path.isRemotePath(xhrURL)){//判断是本地加载还是网络加载
             if(!needCache(xhrURL)){//通过缓存机制判断是否本地加载
                 //无需缓存加载
                 return loadBinary(xhrURL)
             }else{
                 //通过缓存机制加载
-                const fullname = path.getLocalFilePath(xhrURL);
-                if(fs.existsSync(fullname)){
+                const fullname = oppo_path.getLocalFilePath(xhrURL);
+                if(oppo_fs.existsSync(fullname)){
                     //本地有缓存
-                    return loadBinary(path.getUserPath(fullname));
+                    return loadBinary(oppo_path.getUserPath(fullname));
                 }else{
                     //本地没有缓存,下载
-                    return fs.downloadFile(xhrURL,fullname).then(()=>{
+                    return oppo_fs.downloadFile(xhrURL,fullname).then(()=>{
                         //下载完成，再从缓存里读取
-                        return loadBinary(path.getUserPath(fullname));
+                        return loadBinary(oppo_path.getUserPath(fullname));
                     },()=>{
                         return;
                     })
@@ -78,5 +73,5 @@ function needCache(assUrl) {
 
 
 
-const processor = new BinaryProcessor();
-RES.processor.map("bin", processor);
+
+RES.processor.map("bin", new BinaryProcessor());

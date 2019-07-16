@@ -4,6 +4,7 @@ require('./egret.oppogame.js');
 // 启动本地缓存，如果开发者不需要此功能，只需注释即可
 // 只有使用 assetsmanager 的项目可以使用
 if(window.RES && RES.processor) {
+    require('./library/file-util.js');
     require('./library/image.js');
     require('./library/text.js');
     require('./library/sound.js');

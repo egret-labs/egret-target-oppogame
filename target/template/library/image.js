@@ -1,6 +1,3 @@
-const fileutil = require('./file-util');
-const path = fileutil.path;
-const fs = fileutil.fs;
 /**
  * 重写的图片加载器，代替引擎默认的图片加载器
  * 该代码中包含了大量日志用于辅助开发者调试
@@ -22,21 +19,21 @@ class ImageProcessor {
         if (RES['getVirtualUrl']) {
             imageSrc = RES['getVirtualUrl'](imageSrc);
         }
-        if (path.isRemotePath(imageSrc)) { //判断是本地加载还是网络加载
+        if (oppo_path.isRemotePath(imageSrc)) { //判断是本地加载还是网络加载
             if (!needCache(imageSrc)) {//通过缓存机制判断是否本地加载
                 //无需缓存加载
                 return loadImage(imageSrc, scale9Grid);
             } else {
                 //通过缓存机制加载
-                const fullname = path.getLocalFilePath(imageSrc);
-                if (fs.existsSync(fullname)) {
+                const fullname = oppo_path.getLocalFilePath(imageSrc);
+                if (oppo_fs.existsSync(fullname)) {
                     //本地有缓存
-                    return loadImage(path.getUserPath(fullname))
+                    return loadImage(oppo_path.getUserPath(fullname))
                 } else {
                     //本地没有缓存,下载
-                    return fs.downloadFile(imageSrc, fullname).then(() => {
+                    return oppo_fs.downloadFile(imageSrc, fullname).then(() => {
                         //下载完成，再从缓存里读取
-                        return loadImage(path.getUserPath(fullname), scale9Grid);
+                        return loadImage(oppo_path.getUserPath(fullname), scale9Grid);
                     }, () => {
                         return;
                     })
@@ -89,5 +86,5 @@ function needCache(assUrl) {
     }
 }
 
-const processor = new ImageProcessor();
-RES.processor.map("image", processor);
+
+RES.processor.map("image", new ImageProcessor());
