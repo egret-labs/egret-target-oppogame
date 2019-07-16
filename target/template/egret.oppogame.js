@@ -1327,18 +1327,21 @@ r.prototype = e.prototype, t.prototype = new r();
              * @private
              */
             WebHttpRequest.prototype.onReadyStateChange = function () {
+                var _this = this;
                 var xhr = this._xhr;
                 if (xhr.readyState == 4) {
-                    var ioError = (xhr.status >= 400 || xhr.status == 0);
-                    if (ioError) {
-                        if (!this.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
-                            egret.warn(1011, this._url);
+                    var ioError_1 = (xhr.status >= 400 || xhr.status == 0);
+                    window.setTimeout(function () {
+                        if (ioError_1) {
+                            if (!_this.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
+                                egret.warn(1011, _this._url);
+                            }
+                            _this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
                         }
-                        this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
-                    }
-                    else {
-                        this.dispatchEventWith(egret.Event.COMPLETE);
-                    }
+                        else {
+                            _this.dispatchEventWith(egret.Event.COMPLETE);
+                        }
+                    }, 0);
                 }
             };
             WebHttpRequest.prototype.updateProgress = function (event) {
@@ -1568,12 +1571,15 @@ r.prototype = e.prototype, t.prototype = new r();
              * @private
              */
             WebImageLoader.prototype.onImageComplete = function (event) {
+                var _this = this;
                 var image = this.getImage(event);
                 if (!image) {
                     return;
                 }
                 this.data = new egret.BitmapData(image);
-                this.dispatchEventWith(egret.Event.COMPLETE);
+                window.setTimeout(function () {
+                    _this.dispatchEventWith(egret.Event.COMPLETE);
+                }, 0);
             };
             /**
              * @private
@@ -1586,10 +1592,13 @@ r.prototype = e.prototype, t.prototype = new r();
                 this.dispatchIOError(image.src);
             };
             WebImageLoader.prototype.dispatchIOError = function (url) {
+                var _this = this;
                 if (!this.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
                     egret.log(1011, url);
                 }
-                this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
+                window.setTimeout(function () {
+                    _this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
+                }, 0);
             };
             /**
              * @private
@@ -1920,7 +1929,7 @@ r.prototype = e.prototype, t.prototype = new r();
          */
         var CanvasRenderBuffer = (function () {
             function CanvasRenderBuffer(width, height, root) {
-                this.surface = egret.sys.createCanvasRenderBufferSurface(__createCanvas__, width, height);
+                this.surface = egret.sys.createCanvasRenderBufferSurface(__createCanvas__, width, height, root);
                 this.context = this.surface.getContext("2d");
                 if (this.context) {
                     this.context.$offsetX = 0;
@@ -3435,9 +3444,9 @@ if (window['HTMLVideoElement'] == undefined) {
              * 压入绘制矩形指令
              */
             WebGLDrawCmdManager.prototype.pushDrawRect = function () {
-                if (this.drawDataLen == 0 || this.drawData[this.drawDataLen - 1].type != 11 /* RECT */) {
+                if (this.drawDataLen == 0 || this.drawData[this.drawDataLen - 1].type != 1 /* RECT */) {
                     var data = this.drawData[this.drawDataLen] || {};
-                    data.type = 11 /* RECT */;
+                    data.type = 1 /* RECT */;
                     data.count = 0;
                     this.drawData[this.drawDataLen] = data;
                     this.drawDataLen++;
@@ -3476,7 +3485,7 @@ if (window['HTMLVideoElement'] == undefined) {
             WebGLDrawCmdManager.prototype.pushChangeSmoothing = function (texture, smoothing) {
                 texture["smoothing"] = smoothing;
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 9 /* SMOOTHING */;
+                data.type = 10 /* SMOOTHING */;
                 data.texture = texture;
                 data.smoothing = smoothing;
                 this.drawData[this.drawDataLen] = data;
@@ -3488,7 +3497,7 @@ if (window['HTMLVideoElement'] == undefined) {
             WebGLDrawCmdManager.prototype.pushPushMask = function (count) {
                 if (count === void 0) { count = 1; }
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 1 /* PUSH_MASK */;
+                data.type = 2 /* PUSH_MASK */;
                 data.count = count * 2;
                 this.drawData[this.drawDataLen] = data;
                 this.drawDataLen++;
@@ -3499,7 +3508,7 @@ if (window['HTMLVideoElement'] == undefined) {
             WebGLDrawCmdManager.prototype.pushPopMask = function (count) {
                 if (count === void 0) { count = 1; }
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 2 /* POP_MASK */;
+                data.type = 3 /* POP_MASK */;
                 data.count = count * 2;
                 this.drawData[this.drawDataLen] = data;
                 this.drawDataLen++;
@@ -3514,17 +3523,17 @@ if (window['HTMLVideoElement'] == undefined) {
                 for (var i = len - 1; i >= 0; i--) {
                     var data = this.drawData[i];
                     if (data) {
-                        if (data.type == 0 /* TEXTURE */ || data.type == 11 /* RECT */) {
+                        if (data.type == 0 /* TEXTURE */ || data.type == 1 /* RECT */) {
                             drawState = true;
                         }
                         // 如果与上一次blend操作之间无有效绘图，上一次操作无效
-                        if (!drawState && data.type == 3 /* BLEND */) {
+                        if (!drawState && data.type == 4 /* BLEND */) {
                             this.drawData.splice(i, 1);
                             this.drawDataLen--;
                             continue;
                         }
                         // 如果与上一次blend操作重复，本次操作无效
-                        if (data.type == 3 /* BLEND */) {
+                        if (data.type == 4 /* BLEND */) {
                             if (data.value == value) {
                                 return;
                             }
@@ -3535,7 +3544,7 @@ if (window['HTMLVideoElement'] == undefined) {
                     }
                 }
                 var _data = this.drawData[this.drawDataLen] || {};
-                _data.type = 3 /* BLEND */;
+                _data.type = 4 /* BLEND */;
                 _data.value = value;
                 this.drawData[this.drawDataLen] = _data;
                 this.drawDataLen++;
@@ -3545,7 +3554,7 @@ if (window['HTMLVideoElement'] == undefined) {
              */
             WebGLDrawCmdManager.prototype.pushResize = function (buffer, width, height) {
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 4 /* RESIZE_TARGET */;
+                data.type = 5 /* RESIZE_TARGET */;
                 data.buffer = buffer;
                 data.width = width;
                 data.height = height;
@@ -3557,7 +3566,7 @@ if (window['HTMLVideoElement'] == undefined) {
              */
             WebGLDrawCmdManager.prototype.pushClearColor = function () {
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 5 /* CLEAR_COLOR */;
+                data.type = 6 /* CLEAR_COLOR */;
                 this.drawData[this.drawDataLen] = data;
                 this.drawDataLen++;
             };
@@ -3571,11 +3580,11 @@ if (window['HTMLVideoElement'] == undefined) {
                 for (var i = len - 1; i >= 0; i--) {
                     var data = this.drawData[i];
                     if (data) {
-                        if (data.type != 3 /* BLEND */ && data.type != 6 /* ACT_BUFFER */) {
+                        if (data.type != 4 /* BLEND */ && data.type != 7 /* ACT_BUFFER */) {
                             drawState = true;
                         }
                         // 如果与上一次buffer操作之间无有效绘图，上一次操作无效
-                        if (!drawState && data.type == 6 /* ACT_BUFFER */) {
+                        if (!drawState && data.type == 7 /* ACT_BUFFER */) {
                             this.drawData.splice(i, 1);
                             this.drawDataLen--;
                             continue;
@@ -3591,7 +3600,7 @@ if (window['HTMLVideoElement'] == undefined) {
                     }
                 }
                 var _data = this.drawData[this.drawDataLen] || {};
-                _data.type = 6 /* ACT_BUFFER */;
+                _data.type = 7 /* ACT_BUFFER */;
                 _data.buffer = buffer;
                 _data.width = buffer.rootRenderTarget.width;
                 _data.height = buffer.rootRenderTarget.height;
@@ -3603,7 +3612,7 @@ if (window['HTMLVideoElement'] == undefined) {
              */
             WebGLDrawCmdManager.prototype.pushEnableScissor = function (x, y, width, height) {
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 7 /* ENABLE_SCISSOR */;
+                data.type = 8 /* ENABLE_SCISSOR */;
                 data.x = x;
                 data.y = y;
                 data.width = width;
@@ -3616,7 +3625,7 @@ if (window['HTMLVideoElement'] == undefined) {
              */
             WebGLDrawCmdManager.prototype.pushDisableScissor = function () {
                 var data = this.drawData[this.drawDataLen] || {};
-                data.type = 8 /* DISABLE_SCISSOR */;
+                data.type = 9 /* DISABLE_SCISSOR */;
                 this.drawData[this.drawDataLen] = data;
                 this.drawDataLen++;
             };
@@ -3630,11 +3639,16 @@ if (window['HTMLVideoElement'] == undefined) {
                     data.count = 0;
                     data.texture = null;
                     data.filter = null;
-                    data.uv = null;
+                    //data.uv = null;
                     data.value = "";
                     data.buffer = null;
                     data.width = 0;
                     data.height = 0;
+                    data.textureWidth = 0;
+                    data.textureHeight = 0;
+                    data.smoothing = false;
+                    data.x = 0;
+                    data.y = 0;
                 }
                 this.drawDataLen = 0;
             };
@@ -3973,34 +3987,47 @@ if (window['HTMLVideoElement'] == undefined) {
     (function (oppogame) {
         /**
          * @private
-         * WebGLRenderTarget类
-         * 一个WebGL渲染目标，拥有一个frame buffer和texture
+         * WebGLRenderTarget
+         * A WebGL render target with a frame buffer and texture
          */
         var WebGLRenderTarget = (function (_super) {
             __extends(WebGLRenderTarget, _super);
             function WebGLRenderTarget(gl, width, height) {
                 var _this = _super.call(this) || this;
-                // 清除色
                 _this.clearColor = [0, 0, 0, 0];
-                // 是否启用frame buffer, 默认为true
+                /**
+                 * If frame buffer is enabled, the default is true
+                 */
                 _this.useFrameBuffer = true;
                 _this.gl = gl;
-                // 如果尺寸为 0 chrome会报警
-                _this.width = width || 1;
-                _this.height = height || 1;
+                _this._resize(width, height);
                 return _this;
             }
-            /**
-             * 重置render target的尺寸
-             */
-            WebGLRenderTarget.prototype.resize = function (width, height) {
-                var gl = this.gl;
+            WebGLRenderTarget.prototype._resize = function (width, height) {
+                // Chrome alerts if the size is 0
+                width = width || 1;
+                height = height || 1;
+                if (width < 1) {
+                    if (true) {
+                        egret.warn('WebGLRenderTarget _resize width = ' + width);
+                    }
+                    width = 1;
+                }
+                if (height < 1) {
+                    if (true) {
+                        egret.warn('WebGLRenderTarget _resize height = ' + height);
+                    }
+                    height = 1;
+                }
                 this.width = width;
                 this.height = height;
+            };
+            WebGLRenderTarget.prototype.resize = function (width, height) {
+                this._resize(width, height);
+                var gl = this.gl;
                 if (this.frameBuffer) {
-                    // 设置texture尺寸
                     gl.bindTexture(gl.TEXTURE_2D, this.texture);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
                     // gl.bindTexture(gl.TEXTURE_2D, null);
                 }
                 if (this.stencilBuffer) {
@@ -4008,16 +4035,10 @@ if (window['HTMLVideoElement'] == undefined) {
                     this.stencilBuffer = null;
                 }
             };
-            /**
-             * 激活此render target
-             */
             WebGLRenderTarget.prototype.activate = function () {
                 var gl = this.gl;
                 gl.bindFramebuffer(gl.FRAMEBUFFER, this.getFrameBuffer());
             };
-            /**
-             * 获取frame buffer
-             */
             WebGLRenderTarget.prototype.getFrameBuffer = function () {
                 if (!this.useFrameBuffer) {
                     return null;
@@ -4027,22 +4048,16 @@ if (window['HTMLVideoElement'] == undefined) {
             WebGLRenderTarget.prototype.initFrameBuffer = function () {
                 if (!this.frameBuffer) {
                     var gl = this.gl;
-                    // 创建材质
                     this.texture = this.createTexture();
-                    // 创建frame buffer
                     this.frameBuffer = gl.createFramebuffer();
                     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
-                    // 绑定材质
                     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
                 }
             };
-            /**
-             * 创建材质
-             * TODO 创建材质的方法可以合并
-             */
             WebGLRenderTarget.prototype.createTexture = function () {
                 var gl = this.gl;
                 var texture = gl.createTexture();
+                texture[egret.glContext] = gl;
                 gl.bindTexture(gl.TEXTURE_2D, texture);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -4051,9 +4066,6 @@ if (window['HTMLVideoElement'] == undefined) {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 return texture;
             };
-            /**
-             * 清除render target颜色缓存
-             */
             WebGLRenderTarget.prototype.clear = function (bind) {
                 var gl = this.gl;
                 if (bind) {
@@ -4068,14 +4080,12 @@ if (window['HTMLVideoElement'] == undefined) {
                     return;
                 }
                 var gl = this.gl;
-                // 设置render buffer的尺寸
-                gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer); // 是否需要强制绑定？
-                // 绑定stencil buffer
+                gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
                 this.stencilBuffer = gl.createRenderbuffer();
                 gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencilBuffer);
                 gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, this.width, this.height);
                 gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.stencilBuffer);
-                // 此处不解绑是否会造成bug？
+                // Is unbundling a bug here?
                 // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             };
             WebGLRenderTarget.prototype.dispose = function () {
@@ -4150,6 +4160,16 @@ if (window['HTMLVideoElement'] == undefined) {
                 _this.$offsetY = 0;
                 // 获取webglRenderContext
                 _this.context = oppogame.WebGLRenderContext.getInstance(width, height);
+                if (egret.nativeRender) {
+                    if (root) {
+                        _this.surface = _this.context.surface;
+                    }
+                    else {
+                        _this.surface = new egret_native.NativeRenderSurface(_this, width, height, root);
+                    }
+                    _this.rootRenderTarget = null;
+                    return _this;
+                }
                 // buffer 对应的 render target
                 _this.rootRenderTarget = new oppogame.WebGLRenderTarget(_this.context.context, 3, 3);
                 if (width && height) {
@@ -4223,7 +4243,12 @@ if (window['HTMLVideoElement'] == undefined) {
                  * @readOnly
                  */
                 get: function () {
-                    return this.rootRenderTarget.width;
+                    if (egret.nativeRender) {
+                        return this.surface.width;
+                    }
+                    else {
+                        return this.rootRenderTarget.width;
+                    }
                 },
                 enumerable: true,
                 configurable: true
@@ -4234,7 +4259,12 @@ if (window['HTMLVideoElement'] == undefined) {
                  * @readOnly
                  */
                 get: function () {
-                    return this.rootRenderTarget.height;
+                    if (egret.nativeRender) {
+                        return this.surface.height;
+                    }
+                    else {
+                        return this.rootRenderTarget.height;
+                    }
                 },
                 enumerable: true,
                 configurable: true
@@ -4246,9 +4276,13 @@ if (window['HTMLVideoElement'] == undefined) {
              * @param useMaxSize 若传入true，则将改变后的尺寸与已有尺寸对比，保留较大的尺寸。
              */
             WebGLRenderBuffer.prototype.resize = function (width, height, useMaxSize) {
-                this.context.pushBuffer(this);
                 width = width || 1;
                 height = height || 1;
+                if (egret.nativeRender) {
+                    this.surface.resize(width, height);
+                    return;
+                }
+                this.context.pushBuffer(this);
                 // render target 尺寸重置
                 if (width != this.rootRenderTarget.width || height != this.rootRenderTarget.height) {
                     this.context.drawCmdManager.pushResize(this, width, height);
@@ -4270,26 +4304,33 @@ if (window['HTMLVideoElement'] == undefined) {
                 if (width === void 0) { width = 1; }
                 if (height === void 0) { height = 1; }
                 var pixels = new Uint8Array(4 * width * height);
-                var useFrameBuffer = this.rootRenderTarget.useFrameBuffer;
-                this.rootRenderTarget.useFrameBuffer = true;
-                this.rootRenderTarget.activate();
-                this.context.getPixels(x, y, width, height, pixels);
-                this.rootRenderTarget.useFrameBuffer = useFrameBuffer;
-                this.rootRenderTarget.activate();
+                if (egret.nativeRender) {
+                    egret_native.activateBuffer(this);
+                    egret_native.nrGetPixels(x, y, width, height, pixels);
+                    egret_native.activateBuffer(null);
+                }
+                else {
+                    var useFrameBuffer = this.rootRenderTarget.useFrameBuffer;
+                    this.rootRenderTarget.useFrameBuffer = true;
+                    this.rootRenderTarget.activate();
+                    this.context.getPixels(x, y, width, height, pixels);
+                    this.rootRenderTarget.useFrameBuffer = useFrameBuffer;
+                    this.rootRenderTarget.activate();
+                }
                 //图像反转
                 var result = new Uint8Array(4 * width * height);
                 for (var i = 0; i < height; i++) {
                     for (var j = 0; j < width; j++) {
-                        result[(width * (height - i - 1) + j) * 4] = pixels[(width * i + j) * 4];
-                        result[(width * (height - i - 1) + j) * 4 + 1] = pixels[(width * i + j) * 4 + 1];
-                        result[(width * (height - i - 1) + j) * 4 + 2] = pixels[(width * i + j) * 4 + 2];
-                        result[(width * (height - i - 1) + j) * 4 + 3] = pixels[(width * i + j) * 4 + 3];
+                        var index1 = (width * (height - i - 1) + j) * 4;
+                        var index2 = (width * i + j) * 4;
+                        var a = pixels[index2 + 3];
+                        result[index1] = Math.round(pixels[index2] / a * 255);
+                        result[index1 + 1] = Math.round(pixels[index2 + 1] / a * 255);
+                        result[index1 + 2] = Math.round(pixels[index2 + 2] / a * 255);
+                        result[index1 + 3] = pixels[index2 + 3];
                     }
                 }
                 return result;
-            };
-            WebGLRenderBuffer.prototype.$pushResize = function (width, height) {
-                this.context.drawCmdManager.pushResize(this, width, height);
             };
             /**
              * 转换成base64字符串，如果图片（或者包含的图片）跨域，则返回null
@@ -4383,11 +4424,6 @@ if (window['HTMLVideoElement'] == undefined) {
                 }
                 matrix.tx = tx * a1 + ty * c1 + matrix.tx;
                 matrix.ty = tx * b1 + ty * d1 + matrix.ty;
-            };
-            WebGLRenderBuffer.prototype.translate = function (dx, dy) {
-                var matrix = this.globalMatrix;
-                matrix.tx += dx;
-                matrix.ty += dy;
             };
             WebGLRenderBuffer.prototype.useOffset = function () {
                 var self = this;
@@ -5499,6 +5535,47 @@ if (window['HTMLVideoElement'] == undefined) {
 (function (egret) {
     var oppogame;
     (function (oppogame) {
+        /**
+         * @private
+         */
+        var WEBGL_ATTRIBUTE_TYPE;
+        (function (WEBGL_ATTRIBUTE_TYPE) {
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC2"] = 35664] = "FLOAT_VEC2";
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC3"] = 35665] = "FLOAT_VEC3";
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC4"] = 35666] = "FLOAT_VEC4";
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT"] = 5126] = "FLOAT";
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["BYTE"] = 65535] = "BYTE";
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["UNSIGNED_BYTE"] = 5121] = "UNSIGNED_BYTE";
+            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["UNSIGNED_SHORT"] = 5123] = "UNSIGNED_SHORT";
+        })(WEBGL_ATTRIBUTE_TYPE = oppogame.WEBGL_ATTRIBUTE_TYPE || (oppogame.WEBGL_ATTRIBUTE_TYPE = {}));
+        /**
+         * @private
+         */
+        var WEBGL_UNIFORM_TYPE;
+        (function (WEBGL_UNIFORM_TYPE) {
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_VEC2"] = 35664] = "FLOAT_VEC2";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_VEC3"] = 35665] = "FLOAT_VEC3";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_VEC4"] = 35666] = "FLOAT_VEC4";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT_VEC2"] = 35667] = "INT_VEC2";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT_VEC3"] = 35668] = "INT_VEC3";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT_VEC4"] = 35669] = "INT_VEC4";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL"] = 35670] = "BOOL";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL_VEC2"] = 35671] = "BOOL_VEC2";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL_VEC3"] = 35672] = "BOOL_VEC3";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL_VEC4"] = 35673] = "BOOL_VEC4";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_MAT2"] = 35674] = "FLOAT_MAT2";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_MAT3"] = 35675] = "FLOAT_MAT3";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_MAT4"] = 35676] = "FLOAT_MAT4";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["SAMPLER_2D"] = 35678] = "SAMPLER_2D";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["SAMPLER_CUBE"] = 35680] = "SAMPLER_CUBE";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BYTE"] = 65535] = "BYTE";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["UNSIGNED_BYTE"] = 5121] = "UNSIGNED_BYTE";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["SHORT"] = 5122] = "SHORT";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["UNSIGNED_SHORT"] = 5123] = "UNSIGNED_SHORT";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT"] = 5124] = "INT";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["UNSIGNED_INT"] = 5125] = "UNSIGNED_INT";
+            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT"] = 5126] = "FLOAT";
+        })(WEBGL_UNIFORM_TYPE = oppogame.WEBGL_UNIFORM_TYPE || (oppogame.WEBGL_UNIFORM_TYPE = {}));
         /*
         * 覆盖掉系统的 createCanvas
         */
@@ -5704,19 +5781,6 @@ if (window['HTMLVideoElement'] == undefined) {
         /**
          * @private
          */
-        var WEBGL_ATTRIBUTE_TYPE;
-        (function (WEBGL_ATTRIBUTE_TYPE) {
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC2"] = 35664] = "FLOAT_VEC2";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC3"] = 35665] = "FLOAT_VEC3";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT_VEC4"] = 35666] = "FLOAT_VEC4";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["FLOAT"] = 5126] = "FLOAT";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["BYTE"] = 65535] = "BYTE";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["UNSIGNED_BYTE"] = 5121] = "UNSIGNED_BYTE";
-            WEBGL_ATTRIBUTE_TYPE[WEBGL_ATTRIBUTE_TYPE["UNSIGNED_SHORT"] = 5123] = "UNSIGNED_SHORT";
-        })(WEBGL_ATTRIBUTE_TYPE = oppogame.WEBGL_ATTRIBUTE_TYPE || (oppogame.WEBGL_ATTRIBUTE_TYPE = {}));
-        /**
-         * @private
-         */
         var EgretWebGLAttribute = (function () {
             function EgretWebGLAttribute(gl, program, attributeData) {
                 this.gl = gl;
@@ -5732,19 +5796,19 @@ if (window['HTMLVideoElement'] == undefined) {
             EgretWebGLAttribute.prototype.initCount = function (gl) {
                 var type = this.type;
                 switch (type) {
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT:
-                    case WEBGL_ATTRIBUTE_TYPE.BYTE:
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_BYTE:
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_SHORT:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.BYTE:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.UNSIGNED_BYTE:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.UNSIGNED_SHORT:
                         this.count = 1;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC2:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC2:
                         this.count = 2;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC3:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC3:
                         this.count = 3;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC4:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC4:
                         this.count = 4;
                         break;
                 }
@@ -5752,19 +5816,19 @@ if (window['HTMLVideoElement'] == undefined) {
             EgretWebGLAttribute.prototype.initFormat = function (gl) {
                 var type = this.type;
                 switch (type) {
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT:
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC2:
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC3:
-                    case WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC4:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC2:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC3:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.FLOAT_VEC4:
                         this.format = gl.FLOAT;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_BYTE:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.UNSIGNED_BYTE:
                         this.format = gl.UNSIGNED_BYTE;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.UNSIGNED_SHORT:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.UNSIGNED_SHORT:
                         this.format = gl.UNSIGNED_SHORT;
                         break;
-                    case WEBGL_ATTRIBUTE_TYPE.BYTE:
+                    case oppogame.WEBGL_ATTRIBUTE_TYPE.BYTE:
                         this.format = gl.BYTE;
                         break;
                 }
@@ -5915,34 +5979,6 @@ if (window['HTMLVideoElement'] == undefined) {
         /**
          * @private
          */
-        var WEBGL_UNIFORM_TYPE;
-        (function (WEBGL_UNIFORM_TYPE) {
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_VEC2"] = 35664] = "FLOAT_VEC2";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_VEC3"] = 35665] = "FLOAT_VEC3";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_VEC4"] = 35666] = "FLOAT_VEC4";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT_VEC2"] = 35667] = "INT_VEC2";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT_VEC3"] = 35668] = "INT_VEC3";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT_VEC4"] = 35669] = "INT_VEC4";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL"] = 35670] = "BOOL";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL_VEC2"] = 35671] = "BOOL_VEC2";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL_VEC3"] = 35672] = "BOOL_VEC3";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BOOL_VEC4"] = 35673] = "BOOL_VEC4";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_MAT2"] = 35674] = "FLOAT_MAT2";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_MAT3"] = 35675] = "FLOAT_MAT3";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT_MAT4"] = 35676] = "FLOAT_MAT4";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["SAMPLER_2D"] = 35678] = "SAMPLER_2D";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["SAMPLER_CUBE"] = 35680] = "SAMPLER_CUBE";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["BYTE"] = 65535] = "BYTE";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["UNSIGNED_BYTE"] = 5121] = "UNSIGNED_BYTE";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["SHORT"] = 5122] = "SHORT";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["UNSIGNED_SHORT"] = 5123] = "UNSIGNED_SHORT";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["INT"] = 5124] = "INT";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["UNSIGNED_INT"] = 5125] = "UNSIGNED_INT";
-            WEBGL_UNIFORM_TYPE[WEBGL_UNIFORM_TYPE["FLOAT"] = 5126] = "FLOAT";
-        })(WEBGL_UNIFORM_TYPE = oppogame.WEBGL_UNIFORM_TYPE || (oppogame.WEBGL_UNIFORM_TYPE = {}));
-        /**
-         * @private
-         */
         var EgretWebGLUniform = (function () {
             function EgretWebGLUniform(gl, program, uniformData) {
                 this.gl = gl;
@@ -5957,42 +5993,42 @@ if (window['HTMLVideoElement'] == undefined) {
             EgretWebGLUniform.prototype.setDefaultValue = function () {
                 var type = this.type;
                 switch (type) {
-                    case WEBGL_UNIFORM_TYPE.FLOAT:
-                    case WEBGL_UNIFORM_TYPE.SAMPLER_2D:
-                    case WEBGL_UNIFORM_TYPE.SAMPLER_CUBE:
-                    case WEBGL_UNIFORM_TYPE.BOOL:
-                    case WEBGL_UNIFORM_TYPE.INT:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT:
+                    case oppogame.WEBGL_UNIFORM_TYPE.SAMPLER_2D:
+                    case oppogame.WEBGL_UNIFORM_TYPE.SAMPLER_CUBE:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT:
                         this.value = 0;
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC2:
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC2:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC2:
                         this.value = [0, 0];
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC3:
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC3:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC3:
                         this.value = [0, 0, 0];
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC4:
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC4:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC4:
                         this.value = [0, 0, 0, 0];
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT2:
                         this.value = new Float32Array([
                             1, 0,
                             0, 1
                         ]);
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT3:
                         this.value = new Float32Array([
                             1, 0, 0,
                             0, 1, 0,
                             0, 0, 1
                         ]);
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT4:
                         this.value = new Float32Array([
                             1, 0, 0, 0,
                             0, 1, 0, 0,
@@ -6005,20 +6041,20 @@ if (window['HTMLVideoElement'] == undefined) {
             EgretWebGLUniform.prototype.generateSetValue = function () {
                 var type = this.type;
                 switch (type) {
-                    case WEBGL_UNIFORM_TYPE.FLOAT:
-                    case WEBGL_UNIFORM_TYPE.SAMPLER_2D:
-                    case WEBGL_UNIFORM_TYPE.SAMPLER_CUBE:
-                    case WEBGL_UNIFORM_TYPE.BOOL:
-                    case WEBGL_UNIFORM_TYPE.INT:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT:
+                    case oppogame.WEBGL_UNIFORM_TYPE.SAMPLER_2D:
+                    case oppogame.WEBGL_UNIFORM_TYPE.SAMPLER_CUBE:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT:
                         this.setValue = function (value) {
                             var notEqual = this.value !== value;
                             this.value = value;
                             notEqual && this.upload();
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC2:
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC2:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC2:
                         this.setValue = function (value) {
                             var notEqual = this.value[0] !== value.x || this.value[1] !== value.y;
                             this.value[0] = value.x;
@@ -6026,9 +6062,9 @@ if (window['HTMLVideoElement'] == undefined) {
                             notEqual && this.upload();
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC3:
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC3:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC3:
                         this.setValue = function (value) {
                             this.value[0] = value.x;
                             this.value[1] = value.y;
@@ -6036,9 +6072,9 @@ if (window['HTMLVideoElement'] == undefined) {
                             this.upload();
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC4:
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC4:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC4:
                         this.setValue = function (value) {
                             this.value[0] = value.x;
                             this.value[1] = value.y;
@@ -6047,9 +6083,9 @@ if (window['HTMLVideoElement'] == undefined) {
                             this.upload();
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT2:
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT3:
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT4:
                         this.setValue = function (value) {
                             this.value.set(value);
                             this.upload();
@@ -6062,73 +6098,73 @@ if (window['HTMLVideoElement'] == undefined) {
                 var type = this.type;
                 var location = this.location;
                 switch (type) {
-                    case WEBGL_UNIFORM_TYPE.FLOAT:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform1f(location, value);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC2:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform2f(location, value[0], value[1]);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC3:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform3f(location, value[0], value[1], value[2]);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_VEC4:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform4f(location, value[0], value[1], value[2], value[3]);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.SAMPLER_2D:
-                    case WEBGL_UNIFORM_TYPE.SAMPLER_CUBE:
-                    case WEBGL_UNIFORM_TYPE.BOOL:
-                    case WEBGL_UNIFORM_TYPE.INT:
+                    case oppogame.WEBGL_UNIFORM_TYPE.SAMPLER_2D:
+                    case oppogame.WEBGL_UNIFORM_TYPE.SAMPLER_CUBE:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform1i(location, value);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC2:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC2:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform2i(location, value[0], value[1]);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC3:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC3:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform3i(location, value[0], value[1], value[2]);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.BOOL_VEC4:
-                    case WEBGL_UNIFORM_TYPE.INT_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.BOOL_VEC4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.INT_VEC4:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniform4i(location, value[0], value[1], value[2], value[3]);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT2:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT2:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniformMatrix2fv(location, false, value);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT3:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT3:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniformMatrix3fv(location, false, value);
                         };
                         break;
-                    case WEBGL_UNIFORM_TYPE.FLOAT_MAT4:
+                    case oppogame.WEBGL_UNIFORM_TYPE.FLOAT_MAT4:
                         this.upload = function () {
                             var value = this.value;
                             gl.uniformMatrix4fv(location, false, value);
@@ -7225,10 +7261,10 @@ if (window['HTMLVideoElement'] == undefined) {
                     var data = this.drawCmdManager.drawData[i];
                     offset = this.drawData(data, offset);
                     // 计算draw call
-                    if (data.type == 6 /* ACT_BUFFER */) {
+                    if (data.type == 7 /* ACT_BUFFER */) {
                         this.activatedBuffer = data.buffer;
                     }
-                    if (data.type == 0 /* TEXTURE */ || data.type == 11 /* RECT */ || data.type == 1 /* PUSH_MASK */ || data.type == 2 /* POP_MASK */) {
+                    if (data.type == 0 /* TEXTURE */ || data.type == 1 /* RECT */ || data.type == 2 /* PUSH_MASK */ || data.type == 3 /* POP_MASK */) {
                         if (this.activatedBuffer && this.activatedBuffer.$computeDrawCall) {
                             this.activatedBuffer.$drawCalls++;
                         }
@@ -7294,32 +7330,32 @@ if (window['HTMLVideoElement'] == undefined) {
                         this.syncUniforms(program, filter, data.textureWidth, data.textureHeight);
                         offset += this.drawTextureElements(data, offset);
                         break;
-                    case 11 /* RECT */:
+                    case 1 /* RECT */:
                         program = oppogame.EgretWebGLProgram.getProgram(gl, oppogame.EgretShaderLib.default_vert, oppogame.EgretShaderLib.primitive_frag, "primitive");
                         this.activeProgram(gl, program);
                         this.syncUniforms(program, filter, data.textureWidth, data.textureHeight);
                         offset += this.drawRectElements(data, offset);
                         break;
-                    case 1 /* PUSH_MASK */:
+                    case 2 /* PUSH_MASK */:
                         program = oppogame.EgretWebGLProgram.getProgram(gl, oppogame.EgretShaderLib.default_vert, oppogame.EgretShaderLib.primitive_frag, "primitive");
                         this.activeProgram(gl, program);
                         this.syncUniforms(program, filter, data.textureWidth, data.textureHeight);
                         offset += this.drawPushMaskElements(data, offset);
                         break;
-                    case 2 /* POP_MASK */:
+                    case 3 /* POP_MASK */:
                         program = oppogame.EgretWebGLProgram.getProgram(gl, oppogame.EgretShaderLib.default_vert, oppogame.EgretShaderLib.primitive_frag, "primitive");
                         this.activeProgram(gl, program);
                         this.syncUniforms(program, filter, data.textureWidth, data.textureHeight);
                         offset += this.drawPopMaskElements(data, offset);
                         break;
-                    case 3 /* BLEND */:
+                    case 4 /* BLEND */:
                         this.setBlendMode(data.value);
                         break;
-                    case 4 /* RESIZE_TARGET */:
+                    case 5 /* RESIZE_TARGET */:
                         data.buffer.rootRenderTarget.resize(data.width, data.height);
                         this.onResize(data.width, data.height);
                         break;
-                    case 5 /* CLEAR_COLOR */:
+                    case 6 /* CLEAR_COLOR */:
                         if (this.activatedBuffer) {
                             var target = this.activatedBuffer.rootRenderTarget;
                             if (target.width != 0 || target.height != 0) {
@@ -7327,10 +7363,10 @@ if (window['HTMLVideoElement'] == undefined) {
                             }
                         }
                         break;
-                    case 6 /* ACT_BUFFER */:
+                    case 7 /* ACT_BUFFER */:
                         this.activateBuffer(data.buffer, data.width, data.height);
                         break;
-                    case 7 /* ENABLE_SCISSOR */:
+                    case 8 /* ENABLE_SCISSOR */:
                         var buffer = this.activatedBuffer;
                         if (buffer) {
                             if (buffer.rootRenderTarget) {
@@ -7339,13 +7375,13 @@ if (window['HTMLVideoElement'] == undefined) {
                             buffer.enableScissor(data.x, data.y, data.width, data.height);
                         }
                         break;
-                    case 8 /* DISABLE_SCISSOR */:
+                    case 9 /* DISABLE_SCISSOR */:
                         buffer = this.activatedBuffer;
                         if (buffer) {
                             buffer.disableScissor();
                         }
                         break;
-                    case 9 /* SMOOTHING */:
+                    case 10 /* SMOOTHING */:
                         gl.bindTexture(gl.TEXTURE_2D, data.texture);
                         if (data.smoothing) {
                             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
