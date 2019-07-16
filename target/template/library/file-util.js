@@ -69,7 +69,7 @@ const oppo_fs = {
         } else {
             p = oppo_path.normailze(p);
             try {
-                oppoFS.accessSync(SYS_ROOT + dir)
+                oppoFS.accessSync(SYS_ROOT + p)
                 fs_cache[p] = 1;
                 return true;
             } catch (e) {

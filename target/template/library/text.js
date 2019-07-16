@@ -49,7 +49,7 @@ class TextProcessor {
 function writeText(targetFilename, content) {
     return new Promise((resolve, reject) => {
         oppoFS.writeFile({
-            uri: targetFilename,
+            filePath: targetFilename,
             data: content,
             success: function () {
                 resolve(content)
@@ -64,12 +64,12 @@ function writeText(targetFilename, content) {
 function readLoaclText(targetFilename) {
     return new Promise((resolve, reject) => {
         oppoFS.readFile({
-            filePath:SYS_ROOT+target,
-            encoding:'utf8',
-            success:function(res){
+            filePath: targetFilename,
+            encoding: 'utf8',
+            success: function (res) {
                 resolve(res.data);
             },
-            fail:function(){
+            fail: function () {
                 reject();
             }
         })
