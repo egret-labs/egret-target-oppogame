@@ -61,7 +61,6 @@ namespace egret.oppogame {
          */
         constructor(audio: qg.InnerAudioContext) {
             super();
-            audio.onEnded(this.onPlayEnd.bind(this))
             this.audio = audio;
         }
 
@@ -71,6 +70,7 @@ namespace egret.oppogame {
                 return;
             }
             this.audio.play();
+            this.audio.onEnded(this.onPlayEnd.bind(this))
             this.audio.volume = this._volume;
             this.audio.seek(this.$startTime);
         }
@@ -114,13 +114,7 @@ namespace egret.oppogame {
             audio.volume = 0;
             this._volume = 0;
             this.audio = null;
-
-            let url = this.$url;
-
-            //延迟一定时间再停止，规避chrome报错
-            window.setTimeout(function () {
-                audio.pause();
-            }, 200);
+            audio.pause();
         }
 
         /**

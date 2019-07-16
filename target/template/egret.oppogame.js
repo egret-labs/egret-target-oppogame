@@ -401,8 +401,8 @@ r.prototype = e.prototype, t.prototype = new r();
             HtmlSound.prototype.load = function (url) {
                 var self = this;
                 this.url = url;
-                if (true && !url) {
-                    egret.$error(3002);
+                if (!url) {
+                    egret.warn(3002);
                 }
                 var audio = qg.createInnerAudioContext();
                 audio.onCanplay(onAudioLoaded);
@@ -429,8 +429,8 @@ r.prototype = e.prototype, t.prototype = new r();
             HtmlSound.prototype.play = function (startTime, loops) {
                 startTime = +startTime || 0;
                 loops = +loops || 0;
-                if (true && this.loaded == false) {
-                    egret.$error(1049);
+                if (this.loaded == false) {
+                    egret.warn(1049);
                 }
                 var audio = this.originAudio;
                 audio.autoplay = true;
@@ -554,7 +554,6 @@ r.prototype = e.prototype, t.prototype = new r();
                  * @private
                  */
                 _this._volume = 1;
-                audio.onEnded(_this.onPlayEnd.bind(_this));
                 _this.audio = audio;
                 return _this;
             }
@@ -564,6 +563,7 @@ r.prototype = e.prototype, t.prototype = new r();
                     return;
                 }
                 this.audio.play();
+                this.audio.onEnded(this.onPlayEnd.bind(this));
                 this.audio.volume = this._volume;
                 this.audio.seek(this.$startTime);
             };
@@ -583,11 +583,7 @@ r.prototype = e.prototype, t.prototype = new r();
                 audio.volume = 0;
                 this._volume = 0;
                 this.audio = null;
-                var url = this.$url;
-                //延迟一定时间再停止，规避chrome报错
-                window.setTimeout(function () {
-                    audio.pause();
-                }, 200);
+                audio.pause();
             };
             Object.defineProperty(HtmlSoundChannel.prototype, "volume", {
                 /**
@@ -1323,10 +1319,8 @@ r.prototype = e.prototype, t.prototype = new r();
              * @private
              */
             WebHttpRequest.prototype.onTimeout = function () {
-                if (true) {
-                    var message = egret.sys.tr(1052, this._url);
-                    egret.warn(message);
-                }
+                var message = egret.sys.tr(1052, this._url);
+                egret.warn(message);
                 this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
             };
             /**
@@ -1335,20 +1329,16 @@ r.prototype = e.prototype, t.prototype = new r();
             WebHttpRequest.prototype.onReadyStateChange = function () {
                 var xhr = this._xhr;
                 if (xhr.readyState == 4) {
-                    var ioError_1 = (xhr.status >= 400 || xhr.status == 0);
-                    var url_1 = this._url;
-                    var self_1 = this;
-                    window.setTimeout(function () {
-                        if (ioError_1) {
-                            if (true && !self_1.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
-                                egret.$error(1011, url_1);
-                            }
-                            self_1.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
+                    var ioError = (xhr.status >= 400 || xhr.status == 0);
+                    if (ioError) {
+                        if (!this.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
+                            egret.warn(1011, this._url);
                         }
-                        else {
-                            self_1.dispatchEventWith(egret.Event.COMPLETE);
-                        }
-                    }, 0);
+                        this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
+                    }
+                    else {
+                        this.dispatchEventWith(egret.Event.COMPLETE);
+                    }
                 }
             };
             WebHttpRequest.prototype.updateProgress = function (event) {
@@ -1583,10 +1573,7 @@ r.prototype = e.prototype, t.prototype = new r();
                     return;
                 }
                 this.data = new egret.BitmapData(image);
-                var self = this;
-                window.setTimeout(function () {
-                    self.dispatchEventWith(egret.Event.COMPLETE);
-                }, 0);
+                this.dispatchEventWith(egret.Event.COMPLETE);
             };
             /**
              * @private
@@ -1599,13 +1586,10 @@ r.prototype = e.prototype, t.prototype = new r();
                 this.dispatchIOError(image.src);
             };
             WebImageLoader.prototype.dispatchIOError = function (url) {
-                var self = this;
-                window.setTimeout(function () {
-                    if (true && !self.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
-                        egret.$error(1011, url);
-                    }
-                    self.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
-                }, 0);
+                if (!this.hasEventListener(egret.IOErrorEvent.IO_ERROR)) {
+                    egret.log(1011, url);
+                }
+                this.dispatchEventWith(egret.IOErrorEvent.IO_ERROR);
             };
             /**
              * @private
@@ -2363,7 +2347,7 @@ r.prototype = e.prototype, t.prototype = new r();
         /**
          * 支持库版本号
          */
-        oppogame.version = "0.1.4";
+        oppogame.version = "0.1.6";
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 (function (egret) {

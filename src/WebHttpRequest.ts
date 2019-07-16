@@ -156,10 +156,8 @@ namespace egret.oppogame {
          * @private
          */
         private onTimeout(): void {
-            if (DEBUG) {
-                let message = egret.sys.tr(1052, this._url);
-                egret.warn(message)
-            }
+            let message = egret.sys.tr(1052, this._url);
+            egret.warn(message)
             this.dispatchEventWith(IOErrorEvent.IO_ERROR);
         }
         /**
@@ -169,20 +167,17 @@ namespace egret.oppogame {
             let xhr = this._xhr;
             if (xhr.readyState == 4) {// 4 = "loaded"
                 let ioError = (xhr.status >= 400 || xhr.status == 0);
-                let url = this._url;
-                let self = this;
-                window.setTimeout(function (): void {
+                window.setTimeout(()=>{
                     if (ioError) {//请求错误
-                        if (DEBUG && !self.hasEventListener(IOErrorEvent.IO_ERROR)) {
-                            $error(1011, url);
+                        if (!this.hasEventListener(IOErrorEvent.IO_ERROR)) {
+                            egret.warn(1011, this._url);
                         }
-                        self.dispatchEventWith(IOErrorEvent.IO_ERROR);
+                        this.dispatchEventWith(IOErrorEvent.IO_ERROR);
                     }
                     else {
-                        self.dispatchEventWith(Event.COMPLETE);
+                        this.dispatchEventWith(Event.COMPLETE);
                     }
-                }, 0)
-
+                },0)
             }
         }
         private updateProgress(event): void {
