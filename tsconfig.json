@@ -34,7 +34,6 @@
 		"src/org/WebGLRenderTarget.ts",
 		"src/org/WebGLRenderBuffer.ts",
 		"src/org/WebGLRenderer.ts",
-		"src/WebSysImpl.ts",
 		"src/org/EgretWebGLAttribute.ts",
 		"src/org/EgretWebGLProgram.ts",
 		"src/org/EgretWebGLUniform.ts",
@@ -42,6 +41,7 @@
 		"src/org/WebGLRenderContext.ts",
 		"src/org/TextAtlasStrategy.ts",
 		"src/org/TextAtlasRender.ts",
+		"src/WebSysImpl.ts",
 		"libs/egret.d.ts",
 		"libs/qgame.d.ts"
 	]
