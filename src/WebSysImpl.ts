@@ -71,7 +71,7 @@ namespace egret.oppogame {
     * 覆盖掉系统的 createCanvas
     */
     function mainCanvas(width?: number, height?: number): HTMLCanvasElement {
-        return document.getElementById('canvas') as HTMLCanvasElement;            
+        return document.getElementById('canvas') as HTMLCanvasElement;
 
     }
     egret.sys.mainCanvas = mainCanvas;
@@ -162,7 +162,29 @@ namespace egret.oppogame {
         return texture;
     }
     egret.sys.createTexture = createTexture;
-
+    /**
+     * 覆盖掉系统的createTexture
+     */
+    function _createTexture(renderContext: egret.sys.RenderContext, width: number, height: number, data: any): WebGLTexture {
+        const webglrendercontext = <WebGLRenderContext>renderContext;
+        const gl = webglrendercontext.context as WebGLRenderingContext;
+        const texture: WebGLTexture = gl.createTexture() as WebGLTexture;
+        if (!texture) {
+            //先创建texture失败,然后lost事件才发出来..
+            webglrendercontext.contextLost = true;
+            return null;
+        }
+        //
+        texture[glContext] = gl;
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        return texture;
+    }
+    egret.sys._createTexture = _createTexture;
     /**
     * 覆盖掉系统的drawTextureElements
     **/
@@ -176,7 +198,7 @@ namespace egret.oppogame {
         return size;
     }
     egret.sys.drawTextureElements = drawTextureElements;
-    
+
     /**
      * 测量文本的宽度
      * @param context 
@@ -186,7 +208,7 @@ namespace egret.oppogame {
         return context.measureText(text).width;
     }
     egret.sys.measureTextWith = measureTextWith;
-    
+
     /**
      * 为CanvasRenderBuffer创建一个HTMLCanvasElement
      * @param defaultFunc 
