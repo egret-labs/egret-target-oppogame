@@ -2319,7 +2319,7 @@ r.prototype = e.prototype, t.prototype = new r();
         /**
          * 支持库版本号
          */
-        oppogame.version = "0.2.0";
+        oppogame.version = "0.2.1";
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 (function (egret) {
@@ -3815,7 +3815,7 @@ if (window['HTMLVideoElement'] == undefined) {
                 * 混入tintcolor => alpha
                 */
                 alpha = Math.min(alpha, 1.0);
-                var globalTintColor = buffer.globalTintColor;
+                var globalTintColor = buffer.globalTintColor || 0xFFFFFF;
                 var currentTexture = buffer.currentTexture;
                 alpha = ((alpha < 1.0 && currentTexture && currentTexture[egret.UNPACK_PREMULTIPLY_ALPHA_WEBGL]) ?
                     egret.WebGLUtils.premultiplyTint(globalTintColor, alpha)
