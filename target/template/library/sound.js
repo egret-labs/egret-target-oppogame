@@ -50,9 +50,6 @@ class SoundProcessor {
 function loadSound(soundURL) {
     return new Promise((resolve, reject) => {
         let sound = new egret.Sound();
-        sound.addEventListener(egret.Event.COMPLETE, onSuccess, this);
-        sound.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, this);
-        sound.load(soundURL);
         let onSuccess = () => {
             resolve(sound);
         }
@@ -60,6 +57,9 @@ function loadSound(soundURL) {
             const e = new RES.ResourceManagerError(1001, soundURL);
             reject(e);
         }
+        sound.addEventListener(egret.Event.COMPLETE, onSuccess, this);
+        sound.addEventListener(egret.IOErrorEvent.IO_ERROR, onError, this);
+        sound.load(soundURL);
     })
 }
 
