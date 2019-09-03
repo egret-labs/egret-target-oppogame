@@ -135,7 +135,7 @@ namespace egret.oppogame {
          */
         public set volume(value: number) {
             if (this.isStopped) {
-                egret.$error(1036);
+                egret.warn(1036);
                 return;
             }
             this._volume = value;
