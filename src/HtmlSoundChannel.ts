@@ -66,7 +66,7 @@ namespace egret.oppogame {
 
         $play(): void {
             if (this.isStopped) {
-                egret.$error(1036);
+                egret.warn(1036);
                 return;
             }
             this.audio.play();
