@@ -525,7 +525,7 @@ r.prototype = e.prototype, t.prototype = new r();
             }
             HtmlSoundChannel.prototype.$play = function () {
                 if (this.isStopped) {
-                    egret.$error(1036);
+                    egret.warn(1036);
                     return;
                 }
                 this.audio.play();
@@ -564,7 +564,7 @@ r.prototype = e.prototype, t.prototype = new r();
                  */
                 set: function (value) {
                     if (this.isStopped) {
-                        egret.$error(1036);
+                        egret.warn(1036);
                         return;
                     }
                     this._volume = value;
@@ -2792,7 +2792,7 @@ egret.Capabilities["runtimeType" + ""] = "oppogame";
                 option.entryClassName = options.entryClassName || "Main";
                 option.scaleMode = options.scaleMode || egret.StageScaleMode.FIXED_WIDTH;
                 if (option.scaleMode == egret.StageScaleMode.SHOW_ALL) {
-                    option.scaleMode = egret.StageScaleMode.FIXED_WIDE;
+                    option.scaleMode = egret.StageScaleMode.FIXED_WIDTH;
                     var message = egret.sys.tr(4500, "showAll", "fixedWidth");
                     console.warn(message);
                 }
