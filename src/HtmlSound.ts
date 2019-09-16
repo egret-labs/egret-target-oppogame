@@ -166,7 +166,10 @@ namespace egret.oppogame {
          */
         public close() {
             if (this.originAudio)
+            {
                 this.originAudio = null;
+            }
+            this.loaded = false;
         }
     }
 }
