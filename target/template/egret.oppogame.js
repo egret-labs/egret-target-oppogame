@@ -2310,7 +2310,7 @@ r.prototype = e.prototype, t.prototype = new r();
         /**
          * 支持库版本号
          */
-        oppogame.version = "0.2.6";
+        oppogame.version = "0.2.7";
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 (function (egret) {
