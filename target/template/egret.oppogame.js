@@ -1440,7 +1440,7 @@ r.prototype = e.prototype, t.prototype = new r();
 (function (egret) {
     var oppogame;
     (function (oppogame) {
-        oppogame.version = "0.2.8";
+        oppogame.version = "0.2.9";
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 (function (egret) {

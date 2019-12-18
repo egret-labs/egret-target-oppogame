@@ -15,6 +15,7 @@ class SoundProcessor {
         if (RES['getVirtualUrl']) {
             soundSrc = RES['getVirtualUrl'](soundSrc);
         }
+        let oppo_path = window.oppo_path;
         if (oppo_path.isRemotePath(soundSrc)) { //判断是本地加载还是网络加载
             if (!needCache(soundSrc)) {//通过缓存机制判断是否本地加载
                 //无需缓存加载

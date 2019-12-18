@@ -16,6 +16,7 @@ class TextProcessor {
         if (RES['getVirtualUrl']) {
             xhrURL = RES['getVirtualUrl'](xhrURL);
         }
+        let oppo_path = window.oppo_path;
         if (oppo_path.isRemotePath(xhrURL)) {//判断是本地加载还是网络加载
             if (needCache(xhrURL)) {//通过缓存机制判断是否本地加载
                 //通过缓存机制加载
@@ -48,7 +49,7 @@ class TextProcessor {
 
 function writeText(targetFilename, content) {
     return new Promise((resolve, reject) => {
-        oppoFS.writeFile({
+        window.oppoFS.writeFile({
             filePath: targetFilename,
             data: content,
             success: function () {
@@ -63,7 +64,7 @@ function writeText(targetFilename, content) {
 
 function readLoaclText(targetFilename) {
     return new Promise((resolve, reject) => {
-        oppoFS.readFile({
+        window.oppoFS.readFile({
             filePath: targetFilename,
             encoding: 'utf8',
             success: function (res) {

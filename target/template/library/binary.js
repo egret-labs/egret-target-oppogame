@@ -7,6 +7,7 @@ class BinaryProcessor {
             url
         } = resource;
         let xhrURL = url.indexOf('://') >= 0 ? url : root + url;
+        let oppo_path = window.oppo_path
         if (RES['getVirtualUrl']) {
             xhrURL = RES['getVirtualUrl'](xhrURL);
         }

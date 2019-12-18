@@ -149,3 +149,5 @@ const oppo_path = {
         // 'http://XXXXX/resource/bin/': 'temp_bin/'
     }
 }
+window.oppo_path = oppo_path;
+window.oppoFS = oppoFS;

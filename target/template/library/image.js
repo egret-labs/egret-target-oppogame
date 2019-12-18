@@ -19,6 +19,7 @@ class ImageProcessor {
         if (RES['getVirtualUrl']) {
             imageSrc = RES['getVirtualUrl'](imageSrc);
         }
+        let oppo_path = window.oppo_path;
         if (oppo_path.isRemotePath(imageSrc)) { //判断是本地加载还是网络加载
             if (!needCache(imageSrc)) {//通过缓存机制判断是否本地加载
                 //无需缓存加载
