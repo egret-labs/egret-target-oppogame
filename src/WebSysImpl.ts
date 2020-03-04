@@ -67,6 +67,7 @@ namespace egret.oppogame {
         UNSIGNED_INT = 0x1405,
         FLOAT = 0x1406
     }
+
     /*
     * 覆盖掉系统的 createCanvas
     */
@@ -75,6 +76,10 @@ namespace egret.oppogame {
 
     }
     egret.sys.mainCanvas = mainCanvas;
+
+    if (!window['canvas']) {
+        window['canvas'] = document.getElementById('canvas') as HTMLCanvasElement;
+    }
 
     function createCanvas(width?: number, height?: number): HTMLCanvasElement {
         let canvas: HTMLCanvasElement = document.createElement("canvas");
