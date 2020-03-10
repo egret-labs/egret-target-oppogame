@@ -2256,7 +2256,7 @@ declare namespace egret {
          * @language zh_CN
          */
         static create<T extends Event>(EventClass: {
-            new (type: string, bubbles?: boolean, cancelable?: boolean): T;
+            new(type: string, bubbles?: boolean, cancelable?: boolean): T;
             eventPool?: Event[];
         }, type: string, bubbles?: boolean, cancelable?: boolean): T;
         /**
@@ -4328,6 +4328,18 @@ declare namespace egret {
          * @language zh_CN
          */
         setContentSize(width: number, height: number): void;
+        /**
+         * @private
+         */
+        $drawToSurfaceAutoClear: () => void;
+        /**
+         * @private
+         */
+        $drawToSurface: () => void;
+        /**
+         * @private
+         */
+        $resize: (width: any, height: any) => void;
     }
 }
 declare namespace egret {
@@ -4452,6 +4464,7 @@ declare namespace egret {
         SQUARE: string;
     };
 }
+
 declare namespace egret {
     /**
      * The EventPhase class provides values for the eventPhase property of the Event class.
@@ -8342,7 +8355,7 @@ declare namespace egret {
          * @platform Web,Native
          * @language zh_CN
          */
-        new (): Sound;
+        new(): Sound;
         /**
          * Background music
          * @default "music"
@@ -8655,7 +8668,7 @@ declare namespace egret {
      * @copy egret.Video
      */
     let Video: {
-        new (url?: string, cache?: boolean): Video;
+        new(url?: string, cache?: boolean): Video;
     };
 }
 declare namespace egret {
@@ -8909,7 +8922,7 @@ declare namespace egret {
      * @language zh_CN
      */
     let HttpRequest: {
-        new (): HttpRequest;
+        new(): HttpRequest;
     };
 }
 declare namespace egret {
@@ -9056,7 +9069,7 @@ declare namespace egret {
          * @platform Web,Native
          * @language zh_CN
          */
-        new (): ImageLoader;
+        new(): ImageLoader;
         /**
          * Specifies whether to enable cross-origin resource sharing, If ImageLoader instance has been set crossOrigin property will be used to set the property.
          * @version Egret 2.5.7
@@ -9146,6 +9159,11 @@ declare namespace egret.sys {
          * @private
          */
         static $setCanvasScale(x: number, y: number): void;
+        /**
+         * @private
+         * stage渲染
+         */
+        $stageRenderToSurface: () => void;
     }
 }
 declare namespace egret {
@@ -9156,6 +9174,10 @@ declare namespace egret {
         antialias?: boolean;
         canvasScaleFactor?: number;
         calculateCanvasScaleFactor?: (context: CanvasRenderingContext2D) => number;
+        /**
+         * 以下目前仅供小游戏使用
+         * The following are for mini-games only
+         */
         entryClassName?: string;
         scaleMode?: string;
         frameRate?: number;
@@ -9163,6 +9185,9 @@ declare namespace egret {
         contentHeight?: number;
         orientation?: string;
         maxTouches?: number;
+        showFPS?: boolean;
+        showLog?: boolean;
+        fpsStyles?: string;
     };
     /**
      * egret project entry function
@@ -9211,7 +9236,7 @@ declare namespace egret {
      * @private
      */
     let FPSDisplay: {
-        new (stage: Stage, showFPS: boolean, showLog: boolean, logFilter: string, styles: Object): FPSDisplay;
+        new(stage: Stage, showFPS: boolean, showLog: boolean, logFilter: string, styles: Object): FPSDisplay;
     };
 }
 /**
@@ -9323,6 +9348,10 @@ declare namespace egret.sys {
      * @private
      */
     let $errorToFPS: (info: string) => void;
+    let setRenderMode: (renderMode: string) => void;
+    let WebGLRenderContext: {
+        new(width?: number, height?: number, context?: WebGLRenderingContext): RenderContext;
+    };
 }
 /**
  * @private
@@ -9492,7 +9521,7 @@ declare namespace egret.sys {
          * @param height 渲染缓冲的初始高
          * @param root 是否为舞台buffer
          */
-        new (width?: number, height?: number, root?: boolean): RenderBuffer;
+        new(width?: number, height?: number, root?: boolean): RenderBuffer;
     };
     /**
      * @private
@@ -9504,7 +9533,7 @@ declare namespace egret.sys {
          * @param width 渲染缓冲的初始宽
          * @param height 渲染缓冲的初始高
          */
-        new (width?: number, height?: number): RenderBuffer;
+        new(width?: number, height?: number): RenderBuffer;
     };
 }
 declare namespace egret.sys {
@@ -9944,6 +9973,14 @@ declare namespace egret.sys {
          * @private
          */
         private callLaterAsyncs();
+        /**
+         * @private
+         */
+        $beforeRender: () => void;
+        /**
+         * @private
+         */
+        $afterRender: () => void;
     }
 }
 declare module egret {
@@ -10007,7 +10044,7 @@ declare namespace egret.sys {
          * @param y 事件发生处相对于舞台的坐标y
          * @param touchPointID 分配给触摸点的唯一标识号
          */
-        onTouchBegin(x: number, y: number, touchPointID: number): void;
+        onTouchBegin(x: number, y: number, touchPointID: number): boolean;
         /**
          * @private
          */
@@ -10023,7 +10060,7 @@ declare namespace egret.sys {
          * @param y 事件发生处相对于舞台的坐标y
          * @param touchPointID 分配给触摸点的唯一标识号
          */
-        onTouchMove(x: number, y: number, touchPointID: number): void;
+        onTouchMove(x: number, y: number, touchPointID: number): boolean;
         /**
          * @private
          * 触摸结束（弹起）
@@ -10031,7 +10068,7 @@ declare namespace egret.sys {
          * @param y 事件发生处相对于舞台的坐标y
          * @param touchPointID 分配给触摸点的唯一标识号
          */
-        onTouchEnd(x: number, y: number, touchPointID: number): void;
+        onTouchEnd(x: number, y: number, touchPointID: number): boolean;
         /**
          * @private
          * 获取舞台坐标下的触摸对象
@@ -10638,7 +10675,7 @@ declare namespace egret {
      * @copy egret.Orientation
      */
     let DeviceOrientation: {
-        new (): DeviceOrientation;
+        new(): DeviceOrientation;
     };
 }
 declare namespace egret {
@@ -10715,7 +10752,7 @@ declare namespace egret {
          * @platform Web
          * @language zh_CN
          */
-        new (): Geolocation;
+        new(): Geolocation;
     };
 }
 declare namespace egret {
@@ -10723,7 +10760,7 @@ declare namespace egret {
      * @copy egret.Motion
      */
     let Motion: {
-        new (): Motion;
+        new(): Motion;
     };
     /**
      * The Motion class emits events based on activity detected by the device's motion sensor.
@@ -10942,13 +10979,13 @@ declare namespace egret {
         const RUNTIME2 = "runtime2";
         /**
          * Running on Alipay
-         * @version Egret 5.2.23
+         * @version Egret 5.2.33
          * @platform All
          * @language en_US
          */
         /**
          * 运行在支付宝小游戏上
-         * @version Egret 5.2.23
+         * @version Egret 5.2.33
          * @platform All
          * @language zh_CN
          */
@@ -10993,12 +11030,44 @@ declare namespace egret {
          */
         const QGAME = "qgame";
         /**
+         * Running on OPPO mini game
+         * @version Egret 5.2.14
+         * @platform All
+         * @language en_US
+         */
+        /**
          * 运行在 Oppo 小游戏上
          * @version Egret 5.2.14
          * @platform All
          * @language zh_CN
          */
         const OPPOGAME = "oppogame";
+        /**
+        * Running on QQ mini game
+        * @version Egret 5.2.25
+        * @platform All
+        * @language en_US
+        */
+        /**
+        * 运行在 QQ 小游戏上
+        * @version Egret 5.2.25
+        * @platform All
+        * @language zh_CN
+        */
+        const QQGAME = "qqgame";
+        /**
+         * Running on vivo mini game
+         * @version Egret 5.2.23
+         * @platform All
+         * @language en_US
+         */
+        /**
+        * 运行在 vivo 小游戏上
+        * @version Egret 5.2.23
+        * @platform All
+        * @language zh_CN
+        */
+        const VIVOGAME = "vivogame";
     }
     interface SupportedCompressedTexture {
         pvrtc: boolean;
@@ -12305,7 +12374,7 @@ declare namespace egret {
      * @platform Web,Native
      */
     let StageText: {
-        new (): StageText;
+        new(): StageText;
     };
 }
 declare namespace egret.sys {

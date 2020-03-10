@@ -1304,4 +1304,6 @@ namespace egret.oppogame {
 
     WebGLRenderContext.initBlendMode();
 
+    egret.sys.WebGLRenderContext = WebGLRenderContext;
+
 }

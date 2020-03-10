@@ -1521,6 +1521,7 @@ r.prototype = e.prototype, t.prototype = new r();
                 egret.sys.canvasHitTestBuffer = egret.sys.customHitTestBuffer;
             }
         }
+        egret.sys.setRenderMode = setRenderMode;
         function startTicker(ticker) {
             var requestAnimationFrame = window["requestAnimationFrame"] ||
                 window["webkitRequestAnimationFrame"] ||
@@ -5203,6 +5204,7 @@ if (window['HTMLVideoElement'] == undefined) {
         oppogame.WebGLRenderContext = WebGLRenderContext;
         __reflect(WebGLRenderContext.prototype, "egret.oppogame.WebGLRenderContext", ["egret.sys.RenderContext"]);
         WebGLRenderContext.initBlendMode();
+        egret.sys.WebGLRenderContext = WebGLRenderContext;
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 
