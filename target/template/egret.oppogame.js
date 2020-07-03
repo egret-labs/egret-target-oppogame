@@ -1440,7 +1440,7 @@ r.prototype = e.prototype, t.prototype = new r();
 (function (egret) {
     var oppogame;
     (function (oppogame) {
-        oppogame.version = "0.3.1";
+        oppogame.version = "0.3.2";
     })(oppogame = egret.oppogame || (egret.oppogame = {}));
 })(egret || (egret = {}));
 (function (egret) {
@@ -4073,7 +4073,9 @@ if (window['HTMLVideoElement'] == undefined) {
                 var renderContext = oppogame.WebGLRenderContext.getInstance();
                 var gl = renderContext.context;
                 renderContext.$beforeRender();
-                gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+                var width = renderContext.surface.width;
+                var height = renderContext.surface.height;
+                gl.viewport(0, 0, width, height);
             };
             return WebGLRenderer;
         }());
